@@ -1,0 +1,34 @@
+{
+  "name": "fherryfherry/super-framework-engine",
+  "description": "The engine for super framework",
+  "minimum-stability": "stable",
+  "type": "library",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Ferry Ariawan",
+      "email": "ferryyangpuny@gmail.com"
+    }
+  ],
+  "require": {
+    "php": "7.2.*|7.3.*|7.4.*",
+    "ext-json": "*",
+    "ext-pdo": "*",
+    "ext-openssl": "*",
+    "jenssegers/blade": "^1.3",
+    "nesbot/carbon": "^2.39",
+    "philipp15b/php-i18n": "^4.0",
+    "ext-curl": "*",
+    "vlucas/phpdotenv": "^5.2",
+    "nikic/fast-route": "^1.3",
+    "lavary/crunz": "^3.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "SuperFrameworkEngine\\": "src/"
+    },
+    "files": [
+      "src/Helpers/Helper.php"
+    ]
+  }
+}
