@@ -20,6 +20,20 @@ trait CommandCore
             'command'=> 'compile',
             'description'=> 'To compile middleware, route, boot, command, etc'
         ];
+        
+        $result[] = [
+            'class'=> Migration::class,
+            'method'=>'makeMigration',
+            'command'=>'make:migration',
+            'description'=>'To make a migration file'
+        ];
+
+        $result[] = [
+            'class'=> Migration::class,
+            'method'=>'migrate',
+            'command'=>'migrate',
+            'description'=>'To migrate a migration file'
+        ];
 
         if($list) {
             foreach($list as $item) {
