@@ -38,16 +38,21 @@ class Super
      */
     private function responseBuilder() {
         $dispatcher = \FastRoute\cachedDispatcher(function(RouteCollector $r) {
-            $r->addGroup("/".base_path_uri(), function (RouteCollector $r) {
-                foreach ($this->bootstrapCache['route'] as $pattern => $value) {
-                    if($pattern == "/" || $pattern == "") {
-                        $route = null;
-                    } else {
-                        $route = trim($pattern,"/");
-                    }
+            foreach ($this->bootstrapCache['route'] as $pattern => $value) {
+                if($pattern == "/" || $pattern == "") {
+                    $route = "/";
+                } else {
+                    $route = trim($pattern,"/");
+                }
+
+                $route = base_path_uri($route);
+                $route = "/" . trim($route,"/");
+                if($route == "/") {
+                    $r->addRoute(['GET','POST'], "",$value[0]."@".$value[1]);
+                } else {
                     $r->addRoute(['GET','POST'], $route,$value[0]."@".$value[1]);
                 }
-            });
+            }
         },[
             'cacheFile' => base_path('bootstrap/route.cache')
         ]);
@@ -61,6 +66,7 @@ class Super
             $uri = substr($uri, 0, $pos);
         }
         $uri = rawurldecode($uri);
+        $uri = rtrim($uri, "/");
 
         $routeInfo = $dispatcher->dispatch($httpMethod, $uri);
 
