@@ -3,90 +3,43 @@
 namespace SuperFrameworkEngine;
 
 use Dotenv\Dotenv;
-use FastRoute\RouteCollector;
+use SuperFrameworkEngine\Foundation\ResponseBuilder;
 
 class Super
 {
+    use ResponseBuilder;
+
     private $config;
     private $bootstrapCache;
 
     public function __construct()
     {
+        /**
+         * Disable display error because we want to replace it with our display error page
+         */
         ini_set("display_errors", 0);
         ini_set("display_startup_errors", 0);
         ini_set("error_log", base_path("error.log"));
 
-        $this->loadEnv();
+        /**
+         * Activate ENV functionality
+         */
+        Dotenv::createImmutable(base_path())->load();
 
+        /**
+         * Load configuration and bootstrap cache
+         */
         $this->config = include base_path("configs/App.php");
         $this->bootstrapCache = include base_path("bootstrap/cache.php");
 
+        /**
+         * Set default timezone
+         */
         date_default_timezone_set($this->config["timezone"] ?: "UTC");
-    }
-
-    private function loadEnv() {
-        Dotenv::createImmutable(base_path())->load();
     }
 
     private function loadHelpers() {
         foreach($this->bootstrapCache['helper'] as $helper) require_once base_path(lcfirst(str_replace("\\",DIRECTORY_SEPARATOR,$helper['path'])).".php");
-    }
-
-    /**
-     * @return mixed
-     * @throws \Exception
-     */
-    private function responseBuilder() {
-        $dispatcher = \FastRoute\cachedDispatcher(function(RouteCollector $r) {
-            foreach ($this->bootstrapCache['route'] as $pattern => $value) {
-                if($pattern == "/" || $pattern == "") {
-                    $route = "/";
-                } else {
-                    $route = trim($pattern,"/");
-                }
-
-                $route = base_path_uri($route);
-                $route = "/" . trim($route,"/");
-                if($route == "/") {
-                    $r->addRoute(['GET','POST'], "",$value[0]."@".$value[1]);
-                } else {
-                    $r->addRoute(['GET','POST'], $route,$value[0]."@".$value[1]);
-                }
-            }
-        },[
-            'cacheFile' => base_path('bootstrap/route.cache')
-        ]);
-
-        // Fetch method and URI from somewhere
-        $httpMethod = $_SERVER['REQUEST_METHOD'];
-        $uri = $_SERVER['REQUEST_URI'];
-
-        // Strip query string (?foo=bar) and decode URI
-        if (false !== $pos = strpos($uri, '?')) {
-            $uri = substr($uri, 0, $pos);
-        }
-        $uri = rawurldecode($uri);
-        $uri = rtrim($uri, "/");
-
-        $routeInfo = $dispatcher->dispatch($httpMethod, $uri);
-
-        $response = null;
-
-        switch ($routeInfo[0]) {
-            case \FastRoute\Dispatcher::NOT_FOUND:
-                throw new \Exception("The page is not found!", 404);
-                break;
-            case \FastRoute\Dispatcher::METHOD_NOT_ALLOWED:
-                throw new \Exception("The method is not allowed!", 405);
-                break;
-            case \FastRoute\Dispatcher::FOUND:
-                $handler = $routeInfo[1];
-                $vars = $routeInfo[2];
-                list($class, $method) = explode("@", $handler, 2);
-                $response = call_user_func_array([new $class, $method], $vars);
-                break;
-        }
-        return $response;
     }
 
     private function middleware(callable $content) {
@@ -135,9 +88,21 @@ class Super
             }
 
             if($this->config['display_errors'] == "true") {
-                die($e);
+                echo $e;
             } else {
-                die("Something went wrong!");
+                $blade = new \Jenssegers\Blade\Blade(__DIR__."/Views",base_path("bootstrap/views"));
+                switch ($e->getCode()) {
+                    default:
+                    case "500":
+                        echo $blade->make("error.500")->render();
+                        break;
+                    case "404":
+                        echo $blade->make("error.404")->render();
+                        break;
+                    case "405":
+                        echo $blade->make("error.405")->render();
+                        break;
+                }
             }
         }
     }

@@ -1,10 +1,4 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: User
- * Date: 9/3/2020
- * Time: 2:20 PM
- */
 
 namespace SuperFrameworkEngine\Helpers;
 
@@ -16,7 +10,6 @@ class RouteParser
     static function cleanClassName($class_file) {
         $class_name = str_replace(base_path(),"",$class_file);
         $class_name = str_replace("/","\\", $class_name);
-        $class_name = str_replace("system","System", $class_name);
         $class_name = str_replace("app\\","App\\", $class_name);
         $class_name = str_replace(".php","", $class_name);
         return $class_name;
