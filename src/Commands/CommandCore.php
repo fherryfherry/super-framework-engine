@@ -35,6 +35,13 @@ trait CommandCore
             'description'=>'To migrate a migration file'
         ];
 
+        $result[] = [
+            'class'=> Schedule::class,
+            'method'=>'run',
+            'command'=>'schedule:run',
+            'description'=>'To run schedule tasks'
+        ];
+
         if($list) {
             foreach($list as $item) {
                 $reflect = new \ReflectionClass($item['class']);
