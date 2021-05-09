@@ -17,7 +17,7 @@ class FileSystem
      * @return string
      * @throws \Exception
      */
-    function uploadImageByUrl($url, $newFileName) {
+    public static function uploadImageByUrl($url, $newFileName) {
         if(filter_var($url, FILTER_VALIDATE_URL)) {
             if(!file_exists(public_path("uploads"))) {
                 mkdir(public_path("uploads"));
@@ -32,7 +32,7 @@ class FileSystem
 
             if(in_array($ext,["jpg","png","jpeg","webp"])) {
                 $fileBlob = file_get_contents($url);
-                if (file_put_contents(public_path("/uploads/".date("Y-m-d")."/".$newFileName.'.'.$ext), $fileBlob)) {
+                if (file_put_contents(public_path("uploads/".date("Y-m-d")."/".$newFileName.'.'.$ext), $fileBlob)) {
                     return "uploads/".date("Y-m-d")."/".$newFileName.'.'.$ext;
                 } else {
                     throw new \Exception("File can't upload, please make sure that directory is exists or permission is writable");
@@ -46,12 +46,34 @@ class FileSystem
     }
 
     /**
+     * @param string $base64Data
+     * @param string $newFileName
+     * @return string
+     * @throws \Exception
+     */
+    public static function uploadBase64(string $base64Data, string $newFileName, string $extension) {
+        if(!file_exists(public_path("uploads"))) {
+            mkdir(public_path("uploads"));
+        }
+
+        if(!file_exists(public_path("uploads/".date("Y-m-d")))) {
+            mkdir(public_path("uploads/".date("Y-m-d")));
+        }
+
+        if (file_put_contents(public_path("uploads/".date("Y-m-d")."/".$newFileName.'.'.$extension), base64_decode($base64Data))) {
+            return "uploads/".date("Y-m-d")."/".$newFileName.'.'.$extension;
+        } else {
+            throw new \Exception("File can't upload, please make sure that directory is exists or permission is writable");
+        }
+    }
+
+    /**
      * @param $inputName
      * @param $newFileName
      * @return null|string
      * @throws \Exception
      */
-    function uploadImage($inputName, $newFileName) {
+    public static function uploadImage($inputName, $newFileName) {
         if(isset($_FILES[$inputName]["tmp_name"])) {
             if(!file_exists(public_path("uploads"))) {
                 mkdir(public_path("uploads"));
@@ -65,7 +87,7 @@ class FileSystem
 
             $check = getimagesize($_FILES[$inputName]["tmp_name"]);
             if($check !== false) {
-                if (move_uploaded_file($_FILES[$inputName]["tmp_name"], getcwd()."/uploads/".date("Y-m-d")."/".$newFileName.'.'.$ext)) {
+                if (move_uploaded_file($_FILES[$inputName]["tmp_name"], public_path("uploads/".date("Y-m-d")."/".$newFileName.'.'.$ext))) {
                     return "uploads/".date("Y-m-d")."/".$newFileName.'.'.$ext;
                 } else {
                     throw new \Exception("File can't upload, please make sure that directory is exists or permission is writable");
@@ -84,7 +106,7 @@ class FileSystem
      * @return string
      * @throws \Exception
      */
-    function uploadFile($inputName, $newFileName) {
+    public static function uploadFile($inputName, $newFileName) {
         if(isset($_FILES[$inputName]["tmp_name"])) {
             if(!file_exists(public_path("uploads"))) {
                 mkdir(public_path("uploads"));
@@ -96,7 +118,7 @@ class FileSystem
 
             $ext = strtolower(pathinfo($_FILES[$inputName]['name'],PATHINFO_EXTENSION));
 
-            if (move_uploaded_file($_FILES[$inputName]["tmp_name"], getcwd()."/uploads/".date("Y-m-d")."/".$newFileName.'.'.$ext)) {
+            if (move_uploaded_file($_FILES[$inputName]["tmp_name"], public_path("uploads/".date("Y-m-d")."/".$newFileName.'.'.$ext))) {
                 return "uploads/".date("Y-m-d")."/".$newFileName.'.'.$ext;
             } else {
                 throw new \Exception("File can't upload, please make sure that directory is exists or permission is writable");
