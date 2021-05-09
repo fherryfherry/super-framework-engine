@@ -2,8 +2,6 @@
 
 namespace App\Services;
 
-
-use System\App\UtilModel\Model;
 use App\Repositories\RepositoryName;
 
 class ServiceName extends RepositoryName

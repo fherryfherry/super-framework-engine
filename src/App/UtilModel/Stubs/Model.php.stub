@@ -2,8 +2,7 @@
 
 namespace App\Models;
 
-
-use System\App\UtilModel\Model;
+use SuperFrameworkEngine\App\UtilModel\Model;
 
 class ModelName extends Model
 {

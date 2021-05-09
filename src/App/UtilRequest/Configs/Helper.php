@@ -29,20 +29,30 @@ if(!function_exists("request_url_is")) {
     }
 }
 
-if(!function_exists("request_is_post")) {
+if(!function_exists("request_method_is")) {
+    /**
+     * @param $method
+     * @return bool
+     */
+    function request_method_is($method) {
+        return strtolower($_SERVER["REQUEST_METHOD"]) === strtolower($method);
+    }
+}
+
+if(!function_exists("request_method_is_post")) {
     /**
      * @return bool
      */
-    function request_is_post() {
+    function request_method_is_post() {
         return $_SERVER["REQUEST_METHOD"] === 'POST';
     }
 }
 
-if(!function_exists("request_is_get")) {
+if(!function_exists("request_method_is_get")) {
     /**
      * @return bool
      */
-    function request_is_get() {
+    function request_method_is_get() {
         return $_SERVER["REQUEST_METHOD"] === 'GET';
     }
 }

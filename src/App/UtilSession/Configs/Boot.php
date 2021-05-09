@@ -21,7 +21,7 @@ class Boot implements BootInterface
      * @throws \Exception
      */
     private function csrfValidation() {
-        if(request_is_post()) {
+        if(request_method_is_post()) {
             if(config("csrf_token") === true) {
                 if(!request_url_is(config('csrf_token_ignore'))) {
                     if(!csrf_validation()) {
