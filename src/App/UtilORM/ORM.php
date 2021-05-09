@@ -3,6 +3,8 @@
 namespace SuperFrameworkEngine\App\UtilORM;
 
 use SuperFrameworkEngine\App\UtilORM\Drivers\Mysql;
+use SuperFrameworkEngine\App\UtilORM\Drivers\Pgsql;
+use SuperFrameworkEngine\App\UtilORM\Drivers\Sqlite;
 use SuperFrameworkEngine\App\UtilORM\Drivers\Sqlsrv;
 
 class ORM
@@ -50,6 +52,10 @@ class ORM
             return new Mysql($this->connection, $this->table, $this->select, $this->join, $this->join_type, $this->where, $this->limit, $this->offset, $this->order_by, $this->group_by, $this->having);
         } else if($this->config['driver'] == "sqlsrv") {
             return new Sqlsrv($this->connection, $this->table, $this->select, $this->join, $this->join_type, $this->where, $this->limit, $this->offset, $this->order_by, $this->group_by, $this->having);
+        } else if($this->config['driver'] == "pgsql") {
+            return new Pgsql($this->connection, $this->table, $this->select, $this->join, $this->join_type, $this->where, $this->limit, $this->offset, $this->order_by, $this->group_by, $this->having);
+        }else if($this->config['driver'] == "sqlite") {
+            return new Sqlite($this->connection, $this->table, $this->select, $this->join, $this->join_type, $this->where, $this->limit, $this->offset, $this->order_by, $this->group_by, $this->having);
         }
     }
 
@@ -345,12 +351,22 @@ class ORM
     }
 
     /**
+     * To find a record
      * @param null|int $id
      * @return mixed|array
      * @throws \Exception
      */
     public function find($id = null) {
         return $this->driver()->find($id);
+    }
+
+    /**
+     * To find a record
+     * @return mixed
+     */
+    public function first()
+    {
+        return $this->driver()->find();
     }
 
     /**

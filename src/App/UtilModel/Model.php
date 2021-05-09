@@ -1,18 +1,16 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: User
- * Date: 11/12/2019
- * Time: 3:11 PM
- */
 
 namespace SuperFrameworkEngine\App\UtilModel;
-
 
 use SuperFrameworkEngine\App\UtilORM\ORM;
 
 class Model
 {
+    public function __construct(array $row = null) {
+        if($row) {
+            self::modelSetter($this, $row);
+        }
+    }
 
     private static function modelSetter($model, $row) {
         foreach($row as $column => $value) {
@@ -246,7 +244,7 @@ class Model
      */
     public static function delete($id) {
         if(static::isSoftDelete()) {
-            db(static::tableName())->where(static::primaryKey()." = '".$id."'")->update(["deleted_at"=>date("Y-m-d H:i:s")]);
+            db(static::tableName())->where(static::primaryKey()." = '".htmlentities($id)."'")->update(["deleted_at"=>date("Y-m-d H:i:s")]);
         } else {
             db(static::tableName())->delete($id);
         }
@@ -265,10 +263,11 @@ class Model
     }
 
     /**
-     * @param $where_raw
+     * To delete a record by raw condition
+     * @param string $where_raw
      * @throws \Exception
      */
-    public static function deleteWhere($where_raw) {
+    public static function deleteWhere(string $where_raw) {
         if(static::isSoftDelete()) {
             db(static::tableName())->where($where_raw)->update(["deleted_at"=>date("Y-m-d H:i:s")]);
         } else {

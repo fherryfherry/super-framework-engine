@@ -4,7 +4,7 @@ namespace SuperFrameworkEngine\App\UtilORM\Drivers;
 
 use Exception;
 
-class Mysql
+class Pgsql
 {
     private $connection;
     private $table;
@@ -34,21 +34,16 @@ class Mysql
         $this->join_type = $join_type;
     }
 
-    public function findPrimaryKey($table) {
-        if($pk = get_singleton("findPrimaryKey_".$table)) {
-            return $pk;
-        } else {
-            $query = $this->connection->query("DESCRIBE ".$table);
-            $query->setFetchMode(\PDO::FETCH_ASSOC);
-            $result = $query->fetchAll();
-            foreach($result as $row) {
-                if($row['Key'] == 'PRI') {
-                    put_singleton("findPrimaryKey_".$table,$row['Field']);
-                    return $row['Field'];
-                }
-            }
-            return null;
-        }
+    public function findPrimaryKey(string $table) {
+        $query = $this->connection->query("SELECT a.attname AS name, format_type(a.atttypid, a.atttypmod) AS type
+FROM
+    pg_class AS c
+    JOIN pg_index AS i ON c.oid = i.indrelid AND i.indisprimary
+    JOIN pg_attribute AS a ON c.oid = a.attrelid AND a.attnum = ANY(i.indkey)
+WHERE c.oid = '{$table}'::regclass");
+        $query->setFetchMode(\PDO::FETCH_ASSOC);
+        $result = $query->fetch();
+        return $result['name'];
     }
 
     /**
@@ -69,12 +64,13 @@ class Mysql
     public function hasTable(string $table) {
         try {
             $table = filter_var($table,FILTER_SANITIZE_STRING);
-            $stmt = $this->connection->prepare("select 1 from :table limit 1");
-            $result = $stmt->execute([':table'=>$table]);
+            $result = $this->connection->exec("SELECT EXISTS (
+               SELECT FROM information_schema.tables 
+               WHERE table_name   = '{$table}'
+               );");
         } catch (Exception $e) {
             return FALSE;
         }
-
         return $result !== FALSE;
     }
 
