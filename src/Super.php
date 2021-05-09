@@ -29,7 +29,7 @@ class Super
     }
 
     private function loadHelpers() {
-        foreach($this->bootstrapCache['helper'] as $helper) require_once base_path(lcfirst(str_replace("\\",DIRECTORY_SEPARATOR,$helper)).".php");
+        foreach($this->bootstrapCache['helper'] as $helper) require_once base_path(lcfirst(str_replace("\\",DIRECTORY_SEPARATOR,$helper['path'])).".php");
     }
 
     /**
@@ -94,7 +94,7 @@ class Super
         $middleware = $this->bootstrapCache['middleware'];
         if(count($middleware)) {
             foreach($middleware as $mid) {
-                $response = (new $mid)->handle(function() use ($response) {
+                $response = (new $mid['class'])->handle(function() use ($response) {
                     return $response;
                 });
             }
@@ -108,7 +108,7 @@ class Super
         $boot = $this->bootstrapCache['boot'];
         if(count($boot)) {
             foreach($boot as $b) {
-                (new $b)->run();
+                (new $b['class'])->run();
             }
         }
     }

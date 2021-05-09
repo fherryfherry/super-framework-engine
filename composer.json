@@ -1,6 +1,6 @@
 {
   "name": "fherryfherry/super-framework-engine",
-  "description": "The engine for super framework",
+  "description": "The core of super framework",
   "minimum-stability": "stable",
   "type": "library",
   "license": "MIT",

@@ -23,7 +23,7 @@ trait CommandCore
 
         if($list) {
             foreach($list as $item) {
-                $reflect = new \ReflectionClass($item);
+                $reflect = new \ReflectionClass($item['class']);
                 $doc = $this->parseDoc($reflect);
                 $result = array_merge($result, $doc);
             }
