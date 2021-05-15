@@ -9,9 +9,6 @@ class Schedule extends Command
 {
     use OutputMessage;
 
-    /**
-     * @throws \ReflectionException
-     */
     public function run() {
         $a = popen('cd '.base_path('vendor/bin').' && crunz schedule:run', 'r');
         while($b = fgets($a, 2048)) {

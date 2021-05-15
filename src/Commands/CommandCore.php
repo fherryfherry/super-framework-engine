@@ -18,28 +18,35 @@ trait CommandCore
             'class'=> Compile::class,
             'method'=> 'run',
             'command'=> 'compile',
-            'description'=> 'To compile middleware, route, boot, command, etc'
+            'description'=> 'Compile middleware, route, boot, command, etc'
         ];
         
         $result[] = [
             'class'=> Migration::class,
-            'method'=>'makeMigration',
+            'method'=>'migration',
             'command'=>'make:migration',
-            'description'=>'To make a migration file'
+            'description'=>'Make a migration file'
         ];
 
         $result[] = [
             'class'=> Migration::class,
             'method'=>'migrate',
             'command'=>'migrate',
-            'description'=>'To migrate a migration file'
+            'description'=>'Migrate all migration files'
         ];
 
         $result[] = [
             'class'=> Schedule::class,
             'method'=>'run',
             'command'=>'schedule:run',
-            'description'=>'To run schedule tasks'
+            'description'=>'Run schedule tasks'
+        ];
+
+        $result[] = [
+            'class'=> PackageDiscover::class,
+            'method'=>'run',
+            'command'=>'package:discover',
+            'description'=>'Auto discover all super framework libraries'
         ];
 
         if($list) {

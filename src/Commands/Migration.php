@@ -13,7 +13,7 @@ class Migration extends Command
      * @param $migrationName
      * @throws \ReflectionException
      */
-    public function makeMigration($migrationName) {
+    public function migration($migrationName) {
         if(!file_exists(base_path("app/Migrations"))) mkdir(base_path("app/Migrations"));
         if(!file_exists(base_path("app/Migrations/Databases"))) mkdir(base_path("app/Migrations/Databases"));
         if(!file_exists(base_path("app/Migrations/Seeds"))) mkdir(base_path("app/Migrations/Seeds"));
