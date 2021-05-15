@@ -69,8 +69,7 @@ class Sqlite
     public function hasTable(string $table) {
         try {
             $table = filter_var($table,FILTER_SANITIZE_STRING);
-            $stmt = $this->connection->prepare("select 1 from :table limit 1");
-            $result = $stmt->execute([':table'=>$table]);
+            $result = $this->connection->exec("select 1 from `".$table."` limit 1");
         } catch (Exception $e) {
             return FALSE;
         }
@@ -89,10 +88,9 @@ class Sqlite
             $sets[] = $key."= :".$key;
         }
         $where_sql = (isset($this->where))?"WHERE ".implode(" AND ",$this->where):"";
-        $query = "UPDATE :table SET ".implode(",",$sets)." ".$where_sql;
+        $query = "UPDATE `".$this->table."` SET ".implode(",",$sets)." ".$where_sql;
         $stmt = $this->connection->prepare($query);
         $execArray = [];
-        $execArray[':table'] = $this->table;
         foreach($array as $key => $val) {
             $execArray[":" . $key] = $val;
         }
@@ -107,9 +105,8 @@ class Sqlite
      */
     public function insert(array $array) {
         $fields = array_keys($array);
-        $stmt = $this->connection->prepare("INSERT INTO :table (".implode(",", $fields).") VALUES (:".implode(",:", $fields).")");
+        $stmt = $this->connection->prepare("INSERT INTO `".$this->table."` (".implode(",", $fields).") VALUES (:".implode(",:", $fields).")");
         $execArray = [];
-        $execArray[':table'] = $this->table;
         foreach($array as $key => $val) {
             $execArray[":" . $key] = $val;
         }

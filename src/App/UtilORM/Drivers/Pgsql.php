@@ -85,10 +85,9 @@ WHERE c.oid = '{$table}'::regclass");
             $sets[] = $key."= :".$key;
         }
         $where_sql = (isset($this->where))?"WHERE ".implode(" AND ",$this->where):"";
-        $query = "UPDATE :table SET ".implode(",",$sets)." ".$where_sql;
+        $query = "UPDATE `".$this->table."` SET ".implode(",",$sets)." ".$where_sql;
         $stmt = $this->connection->prepare($query);
         $execArray = [];
-        $execArray[':table'] = $this->table;
         foreach($array as $key => $val) {
             $execArray[":" . $key] = $val;
         }
@@ -103,9 +102,8 @@ WHERE c.oid = '{$table}'::regclass");
      */
     public function insert(array $array) {
         $fields = array_keys($array);
-        $stmt = $this->connection->prepare("INSERT INTO :table (".implode(",", $fields).") VALUES (:".implode(",:", $fields).")");
+        $stmt = $this->connection->prepare("INSERT INTO `".$this->table."` (".implode(",", $fields).") VALUES (:".implode(",:", $fields).")");
         $execArray = [];
-        $execArray[':table'] = $this->table;
         foreach($array as $key => $val) {
             $execArray[":" . $key] = $val;
         }
