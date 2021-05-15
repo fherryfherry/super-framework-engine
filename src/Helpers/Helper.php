@@ -112,9 +112,10 @@ if(!function_exists("var_min_export")) {
 if(!function_exists("config")) {
     /**
      * @param $name
+     * @param null $default
      * @return mixed
      */
-    function config($name) {
+    function config($name, $default = null) {
         $name = strpos($name,".")!==false?$name:"default.".$name;
         $split_name = explode(".", $name);
         if($config_data = get_singleton("config_".$split_name[0])) {
@@ -127,7 +128,7 @@ if(!function_exists("config")) {
             }
             put_singleton("config_".$split_name[0], $config_data);
             $key = $split_name[1];
-            return $config_data[$key];
+            return isset($config_data[$key]) ? $config_data[$key] : $default;
         }
     }
 }

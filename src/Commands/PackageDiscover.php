@@ -11,7 +11,7 @@ class PackageDiscover extends Command
     use OutputMessage;
 
     public function run() {
-        $composers = glob(base_path("vendor/{,*/,*/*/,*/*/*/}composer.json"));
+        $composers = $this->rglob(base_path("vendor")."/*/composer.json");
         if($composers) {
             foreach($composers as $composer) {
                 $composerRaw = file_get_contents($composer);
@@ -54,5 +54,13 @@ class PackageDiscover extends Command
             }
         }
         $this->success("Package discover has been finished!");
+    }
+
+    private function rglob($pattern, $flags = 0) {
+        $files = glob($pattern, $flags);
+        foreach (glob(dirname($pattern).'/*', GLOB_ONLYDIR|GLOB_NOSORT) as $dir) {
+            $files = array_merge($files, $this->rglob($dir.'/'.basename($pattern), $flags));
+        }
+        return $files;
     }
 }
