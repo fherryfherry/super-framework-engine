@@ -26,6 +26,7 @@ class Super
          */
         Dotenv::createImmutable(base_path())->load();
 
+
         /**
          * Load configuration and bootstrap cache
          */

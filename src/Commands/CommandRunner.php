@@ -14,7 +14,11 @@ class CommandRunner
     public function __construct()
     {
         $this->bootstrap = include base_path("bootstrap/cache.php");
-        Dotenv::createImmutable(base_path())->load();
+        try {
+            Dotenv::createImmutable(base_path())->load();
+        } catch (\Exception $e) {
+
+        }
     }
 
     private function loadHelpers() {
