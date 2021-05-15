@@ -4,6 +4,7 @@ namespace SuperFrameworkEngine\Commands;
 
 
 use SuperFrameworkEngine\Foundation\Command;
+use SuperFrameworkEngine\Helpers\BtCacheUpdater;
 
 class PackageDiscover extends Command
 {
@@ -16,16 +17,38 @@ class PackageDiscover extends Command
                 $composerRaw = file_get_contents($composer);
                 $composerJson = json_decode($composerRaw, true);
                 if(isset($composerJson['extra']) && isset($composerJson['extra']['super-framework'])) {
+                    $this->success("Discover package: " . $composerJson['name']);
                     $providers = $composerJson['extra']['super-framework']['providers'];
                     if($providers) {
-                        if(!file_exists(base_path("bootstrap".DIRECTORY_SEPARATOR."packages.php"))) {
-                            $packages = [];
-                        } else {
-                            $packages = include base_path("bootstrap".DIRECTORY_SEPARATOR."packages.php");
+                        foreach($providers as $provideClass) {
+                            $reflectionClass = new $provideClass();
+                            $files = [];
+                            foreach($reflectionClass->commands() as $command) {
+                                $files[] = [
+                                    'path'=> (string) $command,
+                                    'class'=> (string) $command
+                                ];
+                            }
+                            BtCacheUpdater::updateCommand($files);
+
+                            $files = [];
+                            foreach($reflectionClass->boots() as $boot) {
+                                $files[] = [
+                                    'path'=> (string) $boot,
+                                    'class'=> (string) $boot
+                                ];
+                            }
+                            BtCacheUpdater::updateBoot($files);
+
+                            $files = [];
+                            foreach($reflectionClass->middlewares() as $middleware) {
+                                $files[] = [
+                                    'path'=> (string) $middleware,
+                                    'class'=> (string) $middleware
+                                ];
+                            }
+                            BtCacheUpdater::updateMiddleware($files);
                         }
-                        $packages = array_merge($packages, $providers);
-                        $packages = array_unique($packages);
-                        file_put_contents(base_path("bootstrap".DIRECTORY_SEPARATOR."packages.php"), "<?php\n\nreturn ".var_min_export($packages, true).";");
                     }
                 }
             }

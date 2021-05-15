@@ -1,7 +1,7 @@
 <?php
 
 
-namespace SuperFrameworkEngine\App\UtilValidator\Configs;
+namespace SuperFrameworkEngine\App\UtilValidator;
 
 
 use SuperFrameworkEngine\Exceptions\ValidatorException;

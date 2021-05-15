@@ -1,5 +1,12 @@
 <?php
 
+if(!function_exists('array_unique_multi')) {
+    function array_unique_multi(array $array, string $key) {
+        $temp = array_unique(array_column($array, $key));
+        return array_intersect_key($array, $temp);
+    }
+}
+
 $singleton_data = [];
 if(!function_exists("put_singleton")) {
     function put_singleton($key, $value) {
