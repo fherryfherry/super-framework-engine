@@ -12,7 +12,9 @@ class Boot implements BootInterface
     public function run() {
         session_start();
         session_name('sess_'.config('app_name'));
-        session_set_cookie_params(config('session_lifetime'), '/', $_SERVER['HTTP_HOST'], config('session_secure'), config('session_httpOnly'));
+        if(session_status() !== PHP_SESSION_ACTIVE) {
+            session_set_cookie_params(config('session_lifetime'), '/', $_SERVER['HTTP_HOST'], config('session_secure'), config('session_httpOnly'));
+        }
 
         $this->csrfValidation();
     }

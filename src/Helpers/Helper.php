@@ -5,7 +5,7 @@ if(!function_exists("put_singleton")) {
     function put_singleton($key, $value) {
         global $singleton_data;
         if(extension_loaded('apcu')) {
-            apcu_add($key, $value, 5);
+            @apcu_add($key, $value, 5);
         } else {
             $singleton_data[$key] = $value;
         }
