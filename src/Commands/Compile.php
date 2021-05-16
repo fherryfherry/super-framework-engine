@@ -35,6 +35,9 @@ class Compile extends Command
     private function compileCommand($prefix_path = "app/") {
         $files = BtCacheUpdater::findFiles($prefix_path."{,*/,*/*/,*/*/*/}Configs".DIRECTORY_SEPARATOR."Command.php");
         BtCacheUpdater::updateCommand($files);
+
+        $files = BtCacheUpdater::findFiles($prefix_path."{,*/,*/*/,*/*/*/}*Command.php");
+        BtCacheUpdater::updateCommand($files);
     }
 
     private function compileBoot($prefix_path = "app/") {
@@ -45,10 +48,16 @@ class Compile extends Command
     private function compileMiddlewares($prefix_path = "app/") {
         $files = BtCacheUpdater::findFiles($prefix_path."{,*/,*/*/,*/*/*/}Configs".DIRECTORY_SEPARATOR."Middleware.php");
         BtCacheUpdater::updateMiddleware($files);
+
+        $files = BtCacheUpdater::findFiles($prefix_path."{,*/,*/*/,*/*/*/}*Middleware.php");
+        BtCacheUpdater::updateMiddleware($files);
     }
 
     private function compileHelpers($prefix_path = "app/") {
         $files = BtCacheUpdater::findFiles($prefix_path."{,*/,*/*/,*/*/*/}Configs".DIRECTORY_SEPARATOR."Helper.php");
+        BtCacheUpdater::updateHelper($files);
+
+        $files = BtCacheUpdater::findFiles($prefix_path."{,*/,*/*/,*/*/*/}*Helper.php");
         BtCacheUpdater::updateHelper($files);
     }
 }
