@@ -50,7 +50,7 @@ class Command
                 // Create repository class
                 if(!file_exists(base_path("app/Repositories"))) mkdir(base_path("app/Repositories"));
                 if(!file_exists(base_path("app/Repositories/{$model_name}Repository.php"))) {
-                    $template = file_get_contents(base_path("system/App/UtilModel/Stubs/Repository.php.stub"));
+                    $template = file_get_contents(__DIR__."/../Stubs/Repository.php.stub");
                     $template = str_replace("RepositoryName", $model_name."Repository", $template);
                     $template = str_replace("ModelName", $model_name, $template);
                     file_put_contents(base_path("app/Repositories/".$model_name."Repository.php"), $template);
