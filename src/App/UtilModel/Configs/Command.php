@@ -17,7 +17,7 @@ class Command
      */
     public function makeModel($table = null) {
         $orm = new ORM();
-        if($table) {
+        if($table && substr($table,0, 2) != "--") {
             $list_table = [$table];
         } else {
             $list_table = $orm->listTable();
