@@ -1,12 +1,15 @@
 <?php
 
-
 namespace SuperFrameworkEngine\Commands;
-
 
 trait CommandArguments
 {
-    public function getArgument(array $arguments, string $key)
+    /**
+     * @param array $arguments
+     * @param string $argument
+     * @return mixed|string
+     */
+    public function getArgument(array $arguments, string $argument)
     {
         $result = [];
         foreach($arguments as $arg) {
@@ -15,6 +18,10 @@ trait CommandArguments
             $val = $argArr[1];
             $result[$key] = $val;
         }
-        return $result[$key];
+        if(isset($result[$argument])) {
+            return $result[$argument];
+        } else {
+            throw new \InvalidArgumentException("There is no argument : {$argument}");
+        }
     }
 }
