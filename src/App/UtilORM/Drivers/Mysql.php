@@ -66,15 +66,9 @@ class Mysql
      * @param $table
      * @return bool
      */
-    public function hasTable(string $table) {
-        try {
-            $table = filter_var($table,FILTER_SANITIZE_STRING);
-            $result = $this->connection->exec("select 1 from `{$table}` limit 1");
-        } catch (Exception $e) {
-            return FALSE;
-        }
-
-        return $result !== FALSE;
+    public function hasTable($table) {
+        $tables = $this->listTable();
+        return in_array($table, $tables);
     }
 
     /**

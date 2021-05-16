@@ -61,17 +61,9 @@ WHERE c.oid = '{$table}'::regclass");
      * @param $table
      * @return bool
      */
-    public function hasTable(string $table) {
-        try {
-            $table = filter_var($table,FILTER_SANITIZE_STRING);
-            $result = $this->connection->exec("SELECT EXISTS (
-               SELECT FROM information_schema.tables 
-               WHERE table_name   = '{$table}'
-               );");
-        } catch (Exception $e) {
-            return FALSE;
-        }
-        return $result !== FALSE;
+    public function hasTable($table) {
+        $tables = $this->listTable();
+        return in_array($table, $tables);
     }
 
     /**
