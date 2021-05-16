@@ -7,7 +7,7 @@ use Dotenv\Dotenv;
 
 class CommandRunner
 {
-    use OutputMessage, CommandCore;
+    use OutputMessage, CommandCore, CommandArguments;
 
     private $bootstrap;
 
@@ -40,7 +40,11 @@ class CommandRunner
      */
     public function run($argv) {
         $this->loadHelpers();
-        $this->header();
+
+        if(!$this->getArgument($argv,"ignore-header")) {
+            $this->header();
+        }
+
         try {
             $command = isset($argv[1]) ? $argv[1] : null;
             $commands = $this->getListCommand($this->bootstrap['command']);

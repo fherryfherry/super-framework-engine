@@ -15,13 +15,13 @@ trait CommandArguments
         foreach($arguments as $arg) {
             $argArr = explode("=",$arg);
             $key = ltrim(ltrim($argArr[0],"-"),"-");
-            $val = $argArr[1];
+            $val = isset($argArr[1]) ? $argArr[1] : true;
             $result[$key] = $val;
         }
         if(isset($result[$argument])) {
             return $result[$argument];
         } else {
-            throw new \InvalidArgumentException("There is no argument : {$argument}");
+            return null;
         }
     }
 }
