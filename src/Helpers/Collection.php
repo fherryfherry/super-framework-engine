@@ -7,7 +7,7 @@ namespace SuperFrameworkEngine\Helpers;
 class Collection
 {
     private $dataArray;
-    private $result = [];
+    private $result = null;
 
     public function __construct(array $array) {
         $this->dataArray = $array;
@@ -19,9 +19,26 @@ class Collection
      */
     public function first(string $key = null)
     {
-        $data = (count($this->result)) ? $this->result : $this->dataArray;
+        $data = (is_array($this->result)) ? $this->result : $this->dataArray;
         $first = array_slice($data,0, 1);
         return ($key) ? $first[$key] : $first;
+    }
+
+    /**
+     * @return int
+     */
+    public function count()
+    {
+        $data = (is_array($this->result)) ?  $this->result : $this->dataArray;
+        return count($data);
+    }
+
+    /**
+     * @return bool
+     */
+    public function exist()
+    {
+        return $this->count() > 0;
     }
 
     /**
@@ -29,12 +46,12 @@ class Collection
      */
     public function get()
     {
-        return (count($this->result)) ? $this->result : $this->dataArray;
+        return (is_array($this->result)) ? $this->result : $this->dataArray;
     }
 
     public function sum(string $key)
     {
-        $data = (count($this->result)) ? $this->result : $this->dataArray;
+        $data = (is_array($this->result)) ? $this->result : $this->dataArray;
         $total = 0;
         foreach($data as $row) {
             $total += $row[$key];
@@ -44,7 +61,7 @@ class Collection
 
     public function average(string $key)
     {
-        $data = (count($this->result)) ? $this->result : $this->dataArray;
+        $data = (is_array($this->result)) ? $this->result : $this->dataArray;
         $total = 0;
         foreach($data as $row) {
             $total += $row[$key];
@@ -59,7 +76,12 @@ class Collection
      */
     public function whereEqual(string $key, string $value)
     {
-        $data = (count($this->result)) ? $this->result : $this->dataArray;
+        if(is_array($this->result)) {
+            $data = $this->result;
+        } else {
+            $data = $this->dataArray;
+            $this->result = [];
+        }
         foreach($data as $row) {
             if(isset($row[$key]) && $row[$key] == $value) {
                 $this->result[] = $row;
@@ -75,7 +97,12 @@ class Collection
      */
     public function whereNotEqual(string $key, string $value)
     {
-        $data = (count($this->result)) ? $this->result : $this->dataArray;
+        if(is_array($this->result)) {
+            $data = $this->result;
+        } else {
+            $data = $this->dataArray;
+            $this->result = [];
+        }
         foreach($data as $row) {
             if(isset($row[$key]) && $row[$key] != $value) {
                 $this->result[] = $row;
@@ -91,7 +118,12 @@ class Collection
      */
     public function whereIn(string $key, array $value)
     {
-        $data = (count($this->result)) ? $this->result : $this->dataArray;
+        if(is_array($this->result)) {
+            $data = $this->result;
+        } else {
+            $data = $this->dataArray;
+            $this->result = [];
+        }
         foreach($data as $row) {
             if(isset($row[$key]) && in_array($row[$key], $value)) {
                 $this->result[] = $row;
@@ -107,7 +139,12 @@ class Collection
      */
     public function whereNotIn(string $key, array $value)
     {
-        $data = (count($this->result)) ? $this->result : $this->dataArray;
+        if(is_array($this->result)) {
+            $data = $this->result;
+        } else {
+            $data = $this->dataArray;
+            $this->result = [];
+        }
         foreach($data as $row) {
             if(isset($row[$key]) && !in_array($row[$key], $value)) {
                 $this->result[] = $row;
@@ -123,7 +160,12 @@ class Collection
      */
     public function whereLike(string $key, string $value)
     {
-        $data = (count($this->result)) ? $this->result : $this->dataArray;
+        if(is_array($this->result)) {
+            $data = $this->result;
+        } else {
+            $data = $this->dataArray;
+            $this->result = [];
+        }
         foreach($data as $row) {
             if(isset($row[$key]) && stripos($row[$key], $value) !== false) {
                 $this->result[] = $row;
@@ -139,7 +181,12 @@ class Collection
      */
     public function whereNotLike(string $key, string $value)
     {
-        $data = (count($this->result)) ? $this->result : $this->dataArray;
+        if(is_array($this->result)) {
+            $data = $this->result;
+        } else {
+            $data = $this->dataArray;
+            $this->result = [];
+        }
         foreach($data as $row) {
             if(isset($row[$key]) && stripos($row[$key], $value) === false) {
                 $this->result[] = $row;
@@ -155,7 +202,12 @@ class Collection
      */
     public function whereGreaterThan(string $key, $value)
     {
-        $data = (count($this->result)) ? $this->result : $this->dataArray;
+        if(is_array($this->result)) {
+            $data = $this->result;
+        } else {
+            $data = $this->dataArray;
+            $this->result = [];
+        }
         foreach($data as $row) {
             if(isset($row[$key]) && $row[$key] > $value) {
                 $this->result[] = $row;
@@ -171,7 +223,12 @@ class Collection
      */
     public function whereLessThan(string $key, $value)
     {
-        $data = (count($this->result)) ? $this->result : $this->dataArray;
+        if(is_array($this->result)) {
+            $data = $this->result;
+        } else {
+            $data = $this->dataArray;
+            $this->result = [];
+        }
         foreach($data as $row) {
             if(isset($row[$key]) && $row[$key] < $value) {
                 $this->result[] = $row;
@@ -187,7 +244,12 @@ class Collection
      */
     public function whereGreaterThanEq(string $key, $value)
     {
-        $data = (count($this->result)) ? $this->result : $this->dataArray;
+        if(is_array($this->result)) {
+            $data = $this->result;
+        } else {
+            $data = $this->dataArray;
+            $this->result = [];
+        }
         foreach($data as $row) {
             if(isset($row[$key]) && $row[$key] >= $value) {
                 $this->result[] = $row;
@@ -203,7 +265,12 @@ class Collection
      */
     public function whereLessThanEq(string $key, $value)
     {
-        $data = (count($this->result)) ? $this->result : $this->dataArray;
+        if(is_array($this->result)) {
+            $data = $this->result;
+        } else {
+            $data = $this->dataArray;
+            $this->result = [];
+        }
         foreach($data as $row) {
             if(isset($row[$key]) && $row[$key] <= $value) {
                 $this->result[] = $row;
