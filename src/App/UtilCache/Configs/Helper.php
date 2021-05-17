@@ -7,7 +7,7 @@ if(!function_exists('cache_tag_forget')) {
      */
     function cache_tag_forget( $tag = "general") {
         $tag = md5($tag);
-        $cacheFiles = glob(base_path("bootstrap/Cache/".$tag.".*"));
+        $cacheFiles = glob(base_path("bootstrap/cache/".$tag.".*"));
         foreach($cacheFiles as $cacheFile) {
             unlink($cacheFile);
         }
@@ -23,7 +23,7 @@ if(!function_exists('cache_forget')) {
     function cache_forget($key, $tag = "general") {
         $tag = md5($tag);
         $key = md5($key);
-        $file_path = base_path("bootstrap/Cache/".$tag.".".$key);
+        $file_path = base_path("bootstrap/cache/".$tag.".".$key);
         if(file_exists($file_path)) unlink($file_path);
     }
 }
@@ -40,27 +40,27 @@ if(!function_exists("cache")) {
     function cache($key, $value = null, $tag = "general", $minutes = 60) {
         if(is_array($key)) {
             foreach($key as $k=>$v) {
-                file_put_contents(base_path("bootstrap/Cache/".md5($tag).".".md5($k)), serialize([
+                file_put_contents(base_path("bootstrap/cache/".md5($tag).".".md5($k)), serialize([
                     "expired"=>strtotime("+".$minutes." minutes"),
                     "content"=>$value
                 ]));
             }
         } else {
             if($value) {
-                file_put_contents(base_path("bootstrap/Cache/".md5($tag).".".md5($key)), serialize([
+                file_put_contents(base_path("bootstrap/cache/".md5($tag).".".md5($key)), serialize([
                     "expired"=>strtotime("+".$minutes." minutes"),
                     "content"=>$value
                 ]));
             } else {
                 $tag = md5($tag);
                 $key = md5($key);
-                if(file_exists(base_path("bootstrap/Cache/".$tag.".".$key))) {
-                    $cache = file_get_contents(base_path("bootstrap/Cache/".$tag.".".$key));
+                if(file_exists(base_path("bootstrap/cache/".$tag.".".$key))) {
+                    $cache = file_get_contents(base_path("bootstrap/cache/".$tag.".".$key));
                     $cache = unserialize($cache);
                     if($cache['expired'] > time()) {
                         return $cache['content'];
                     } else {
-                        unlink(base_path("bootstrap/Cache/".$tag.".".$key));
+                        unlink(base_path("bootstrap/cache/".$tag.".".$key));
                     }
                 }
             }
