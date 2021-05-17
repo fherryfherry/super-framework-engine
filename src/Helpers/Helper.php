@@ -1,5 +1,16 @@
 <?php
 
+if(!function_exists('simple_collect')) {
+    /**
+     * @param array $dataArray
+     * @return \SuperFrameworkEngine\Helpers\Collection
+     */
+    function simple_collect(array $dataArray)
+    {
+        return (new \SuperFrameworkEngine\Helpers\Collection($dataArray));
+    }
+}
+
 if(!function_exists('array_unique_multi')) {
     function array_unique_multi(array $array, string $key) {
         $temp = array_unique(array_column($array, $key));
