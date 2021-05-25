@@ -23,39 +23,62 @@ class ORM
     private $group_by;
     private $having;
 
-    public function __construct()
+    public function __construct(\PDO $connection)
     {
         $this->config = include base_path("configs/Database.php");
+        $this->connection = $connection;
+    }
+
+    /**
+     * To create a connection only
+     * @return \PDO
+     */
+    public static function createConnection() {
+        $config = include base_path("configs/Database.php");
+        $connection = null;
+        if($config['driver'] == "sqlsrv") {
+            $connection = Sqlsrv::createPDO($config);
+        } elseif ($config['driver'] == "pgsql") {
+            $connection = Pgsql::createPDO($config);
+        } elseif ($config['driver'] == "sqlite") {
+            $connection = Sqlite::createPDO($config);
+        } else {
+            $connection = Mysql::createPDO($config);
+            $connection->setAttribute(\PDO::ATTR_EMULATE_PREPARES, false);
+        }
+        $connection->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+        return $connection;
     }
 
     public function getInstance() {
-        $this->createConnection();
         return $this->connection;
     }
 
-    private function createConnection() {
-        if(!$this->connection) {
-            if($this->config['driver'] == "sqlsrv") {
-                $this->connection = new \PDO($this->config['driver'].":Server=".$this->config['host'].";Database=".$this->config['database'].";ConnectionPooling=0", $this->config['username'], $this->config['password']);
-            } else {
-                $this->connection = new \PDO($this->config['driver'].":host=".$this->config['host'].";dbname=".$this->config['database'], $this->config['username'], $this->config['password']);
-                $this->connection->setAttribute(\PDO::ATTR_EMULATE_PREPARES, false);
-            }
+    public function beginTransaction()
+    {
+        $this->connection->beginTransaction();
+    }
 
-            $this->connection->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
-        }
+    public function commit()
+    {
+        $this->connection->commit();
+    }
+
+    public function rollback()
+    {
+        $this->connection->rollback();
     }
 
     private function driver() {
-        $this->createConnection();
-        if($this->config['driver'] == "mysql") {
-            return new Mysql($this->connection, $this->table, $this->select, $this->join, $this->join_type, $this->where, $this->limit, $this->offset, $this->order_by, $this->group_by, $this->having);
-        } else if($this->config['driver'] == "sqlsrv") {
+        if($this->config['driver'] == "sqlsrv") {
             return new Sqlsrv($this->connection, $this->table, $this->select, $this->join, $this->join_type, $this->where, $this->limit, $this->offset, $this->order_by, $this->group_by, $this->having);
         } else if($this->config['driver'] == "pgsql") {
             return new Pgsql($this->connection, $this->table, $this->select, $this->join, $this->join_type, $this->where, $this->limit, $this->offset, $this->order_by, $this->group_by, $this->having);
         }else if($this->config['driver'] == "sqlite") {
             return new Sqlite($this->connection, $this->table, $this->select, $this->join, $this->join_type, $this->where, $this->limit, $this->offset, $this->order_by, $this->group_by, $this->having);
+        } else {
+            // MySQL
+            return new Mysql($this->connection, $this->table, $this->select, $this->join, $this->join_type, $this->where, $this->limit, $this->offset, $this->order_by, $this->group_by, $this->having);
         }
     }
 
@@ -120,18 +143,30 @@ class ORM
     }
 
     /**
-     * @param string $table
+     * @param string|null $table
      * @return ORM
      */
-    public function db($table) {
+    public function db($table = null) {
         $this->table = $table;
         return $this;
     }
 
     /**
+     * @param string $table
+     * @return $this
+     */
+    public function from(string $table)
+    {
+        $this->table = $table;
+        return $this;
+    }
+
+    /**
+     * @param $field
+     * @param mixed ...$moreFields
      * @return ORM
      */
-    public function select() {
+    public function select($field, ...$moreFields) {
         $arguments = func_get_args();
         $this->select = implode(",",$arguments);
         return $this;

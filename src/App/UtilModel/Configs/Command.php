@@ -16,25 +16,24 @@ class Command
      * @param $table
      */
     public function makeModel($table = null) {
-        $orm = new ORM();
         if($table && substr($table,0, 2) != "--") {
             $list_table = [$table];
         } else {
-            $list_table = $orm->listTable();
+            $list_table = db()->listTable();
         }
 
         foreach($list_table as $table) {
 
             $model_name = convert_snake_to_CamelCase($table,true);
 
-            if($orm->hasTable($table)) {
+            if(db()->hasTable($table)) {
                 $template = file_get_contents(__DIR__."/../Stubs/Model.php.stub");
                 $template = str_replace("ModelName", $model_name, $template);
 
                 $todo = null;
                 $todo .= "\t".'protected $table = "'.$table.'";'."\n";
-                $todo .= "\t".'protected $primaryKey = "'.$orm->findPrimaryKey($table).'";'."\n\n";
-                foreach($orm->listColumn($table) as $column) {
+                $todo .= "\t".'protected $primaryKey = "'.db()->findPrimaryKey($table).'";'."\n\n";
+                foreach(db()->listColumn($table) as $column) {
                     $todo .= "\t".'public $'.$column.';'."\n";
                 }
 

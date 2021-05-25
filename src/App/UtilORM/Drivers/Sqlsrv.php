@@ -34,6 +34,11 @@ class Sqlsrv
         $this->join_type = $join_type;
     }
 
+    public static function createPDO(array $config)
+    {
+        return new \PDO($config['driver'].":Server=".$config['host'].";Database=".$config['database'].";ConnectionPooling=0", $config['username'], $config['password']);
+    }
+
     public function findPrimaryKey($table) {
         if($pk = get_singleton("findPrimaryKey_".$table)) {
             return $pk;

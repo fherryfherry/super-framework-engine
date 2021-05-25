@@ -51,7 +51,7 @@ class DataTable
             $order_column = request('columns')[$order_column_idx]['data'];
             $order_column_dir = request('order')[0]['dir'];
         } else {
-            $order_column = $this->table.".".(new ORM())->findPrimaryKey($this->table);
+            $order_column = $this->table.".".db()->findPrimaryKey($this->table);
             $order_column_dir = "desc";
         }
 

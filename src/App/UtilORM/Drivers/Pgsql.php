@@ -34,6 +34,11 @@ class Pgsql
         $this->join_type = $join_type;
     }
 
+    public static function createPDO(array $config)
+    {
+        return new \PDO($config['driver'].":host=".$config['host'].";dbname=".$config['database'], $config['username'], $config['password']);
+    }
+
     public function findPrimaryKey(string $table) {
         $query = $this->connection->query("SELECT a.attname AS name, format_type(a.atttypid, a.atttypmod) AS type
 FROM

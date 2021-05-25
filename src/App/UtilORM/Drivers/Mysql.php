@@ -6,6 +6,8 @@ use Exception;
 
 class Mysql
 {
+    // Todo: split default methods to trait or parent class
+
     private $connection;
     private $table;
     private $select;
@@ -32,6 +34,11 @@ class Mysql
         $this->having = $having;
         $this->join = $join;
         $this->join_type = $join_type;
+    }
+
+    public static function createPDO(array $config)
+    {
+        return new \PDO($config['driver'].":host=".$config['host'].";dbname=".$config['database'], $config['username'], $config['password']);
     }
 
     public function findPrimaryKey($table) {

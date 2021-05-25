@@ -34,6 +34,11 @@ class Sqlite
         $this->join_type = $join_type;
     }
 
+    public static function createPDO(array $config)
+    {
+        return new \PDO($config['driver'].":host=".$config['host'].";dbname=".$config['database'], $config['username'], $config['password']);
+    }
+
     public function findPrimaryKey($table) {
         if($pk = get_singleton("findPrimaryKey_".$table)) {
             return $pk;
