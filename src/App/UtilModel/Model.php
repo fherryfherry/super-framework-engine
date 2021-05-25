@@ -27,6 +27,11 @@ class Model
         return (new static())->table;
     }
 
+    public static function count()
+    {
+        return db(static::tableName())->count();
+    }
+
     /**
      * @return ORM
      */
@@ -75,9 +80,7 @@ class Model
             $data = call_user_func($query, $data);
         }
 
-        $result = $data->all($limit, $offset);
-
-        return $result;
+        return $data->all($limit, $offset);
     }
 
     /**
@@ -213,11 +216,8 @@ class Model
     public function save() {
         $data_array = [];
         foreach(static::columns() as $column) {
-            if(static::primaryKey() != $column) {
-                $value = $this->$column;
-                if(isset($value)) {
-                    $data_array[ $column ] = $this->$column;
-                }
+            if(isset($this->$column) || $this->$column !== 0 || $this->$column === null) {
+                $data_array[ $column ] = $this->$column;
             }
         }
 
