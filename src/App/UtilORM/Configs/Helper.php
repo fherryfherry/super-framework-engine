@@ -10,12 +10,10 @@ if(!function_exists("db")) {
     function db(string $table = null) {
         global $globalConnection;
         if(isset($globalConnection)) {
-            /** @var \SuperFrameworkEngine\App\UtilORM\ORM $globalConnection */
-            return $globalConnection->db($table);
+            return (new \SuperFrameworkEngine\App\UtilORM\ORM($globalConnection))->db($table);
         } else {
             $globalConnection = \SuperFrameworkEngine\App\UtilORM\ORM::createConnection();
-            $globalConnection = new \SuperFrameworkEngine\App\UtilORM\ORM($globalConnection);
-            return $globalConnection->db($table);
+            return (new \SuperFrameworkEngine\App\UtilORM\ORM($globalConnection))->db($table);
         }
     }
 }
