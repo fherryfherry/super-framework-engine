@@ -26,4 +26,18 @@ class Response
         header("Content-Disposition: attachment; filename=\"". $filename ."\"");
         return $content;
     }
+
+    function abortError($errorName, $errorDescription = null, $headerCode = "500 Internal Server Error") {
+        header("HTTP/1.0 ".$headerCode);
+        $data['error_name'] = $errorName;
+        $data['error_description'] = $errorDescription;
+        return view_custom("app/Error","general", $data);
+    }
+
+    public function abortError404() {
+        header("HTTP/1.0 404 Not Found");
+        $data['error_name'] = "404 Page Not Found";
+        return view_custom("app/Error","404", $data);
+    }
+
 }

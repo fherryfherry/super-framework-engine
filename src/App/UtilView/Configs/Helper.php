@@ -12,3 +12,16 @@ if(!function_exists("view")) {
         return $blade->make($view_split[1],$data)->render();
     }
 }
+
+if(!function_exists("view_custom")) {
+    /**
+     * @param $path
+     * @param $viewName
+     * @param array $data
+     * @return string
+     */
+    function view_custom($path, $viewName, $data = []) {
+        $blade = new \Jenssegers\Blade\Blade(base_path($path),base_path("bootstrap/views"));
+        return $blade->make($viewName,$data)->render();
+    }
+}
