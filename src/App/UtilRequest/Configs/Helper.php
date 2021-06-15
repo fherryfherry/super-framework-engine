@@ -14,14 +14,19 @@ if(!function_exists("request_url_is")) {
             if(substr($path,-1,1)=="*") {
                 $pattern = str_replace("*","(.*)", $path);
                 $pattern = str_replace("/","\/", $pattern);
-                $pattern = '/(.*)('.$pattern.'|'.rtrim($path,"*").')$/';
+
+                $pattern2 = rtrim($path,"*");
+                $pattern2 = str_replace("*","(.*)", $pattern2);
+                $pattern2 = str_replace("/","\/", $pattern2);
+
+                $pattern = '/(.*)('.$pattern.'|'.$pattern2.')$/';
             } else {
                 $pattern = str_replace("*","(.*)", $path);
                 $pattern = str_replace("/","\/", $pattern);
                 $pattern = '/(.*)'.$pattern.'$/';
             }
 
-            if(preg_match($pattern, get_current_url()) === 1) {
+            if(preg_match($pattern, get_current_url(null, false)) === 1) {
                 return true;
             }
         }

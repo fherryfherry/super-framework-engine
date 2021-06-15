@@ -27,7 +27,7 @@ class Response
         return $content;
     }
 
-    function abortError($errorName, $errorDescription = null, $headerCode = "500 Internal Server Error") {
+    public function abortError($errorName, $errorDescription = null, $headerCode = "500 Internal Server Error") {
         header("HTTP/1.0 ".$headerCode);
         $data['error_name'] = $errorName;
         $data['error_description'] = $errorDescription;

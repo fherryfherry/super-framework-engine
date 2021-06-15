@@ -44,7 +44,7 @@ class Super
     }
 
     private function middleware(callable $content) {
-        $response = call_user_func($content);
+        $response = $content;
         $middleware = $this->bootstrapCache['middleware'];
         if(count($middleware)) {
             foreach($middleware as $mid) {
@@ -52,10 +52,8 @@ class Super
                     return $response;
                 });
             }
-        } else {
-            return $response;
         }
-        return $response;
+        return call_user_func($response);
     }
 
     private function boot() {
