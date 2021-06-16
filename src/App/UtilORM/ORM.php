@@ -284,12 +284,32 @@ class ORM
 
     /**
      * @param $field
+     * @return ORM
+     */
+    public function whereNotNull($field) {
+        $this->where[] = $field." IS NOT NULL";
+        return $this;
+    }
+
+    /**
+     * @param $field
      * @param array $array
      * @return ORM
      */
     public function whereIn($field, array $array) {
         $array = implode("','",$array);
         $this->where[] = $field." IN ('".$array."')";
+        return $this;
+    }
+
+    /**
+     * @param $field
+     * @param array $array
+     * @return ORM
+     */
+    public function whereNotIn($field, array $array) {
+        $array = implode("','",$array);
+        $this->where[] = $field." NOT IN ('".$array."')";
         return $this;
     }
 
@@ -306,7 +326,20 @@ class ORM
         return $this;
     }
 
+    /**
+     * Generate random data
+     * @return $this
+     */
     public function orderByRandom() {
+        $this->order_by = $this->driver()->orderByRandom();
+        return $this;
+    }
+
+    /**
+     * Generate random data
+     * @return $this
+     */
+    public function random() {
         $this->order_by = $this->driver()->orderByRandom();
         return $this;
     }
