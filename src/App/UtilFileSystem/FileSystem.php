@@ -73,7 +73,7 @@ class FileSystem
      * @return null|string
      * @throws \Exception
      */
-    public static function uploadImage($inputName, $newFileName) {
+    public static function uploadImage($inputName, $newFileName, $resizeToWidth = null, $resizeToHeight=null) {
         if(isset($_FILES[$inputName]["tmp_name"])) {
             if(!file_exists(public_path("uploads"))) {
                 mkdir(public_path("uploads"));
@@ -87,11 +87,21 @@ class FileSystem
 
             $check = getimagesize($_FILES[$inputName]["tmp_name"]);
             if($check !== false) {
-                if (move_uploaded_file($_FILES[$inputName]["tmp_name"], public_path("uploads/".date("Y-m-d")."/".$newFileName.'.'.$ext))) {
-                    return "uploads/".date("Y-m-d")."/".$newFileName.'.'.$ext;
+                $image = new SimpleImage();
+                $image->load($_FILES[$inputName]["tmp_name"]);
+                if($resizeToWidth && $resizeToHeight) {
+                    $image->resize($resizeToWidth, $resizeToHeight);
+                } elseif ($resizeToWidth && !$resizeToHeight) {
+                    $image->resizeToWidth($resizeToWidth);
+                } elseif (!$resizeToWidth && $resizeToHeight) {
+                    $image->resizeToHeight($resizeToHeight);
                 } else {
-                    throw new \Exception("File can't upload, please make sure that directory is exists or permission is writable");
+                    $image->resizeToWidth(1024);
                 }
+
+                $image->save(public_path("uploads/".date("Y-m-d")."/".$newFileName.'.'.$ext));
+
+                return "uploads/".date("Y-m-d")."/".$newFileName.'.'.$ext;
             } else {
                 throw new \Exception("The file type is not an image!");
             }
