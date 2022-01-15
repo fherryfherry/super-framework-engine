@@ -18,12 +18,12 @@ class Migration extends Command
         if(!file_exists(base_path("app/Migrations/Databases"))) mkdir(base_path("app/Migrations/Databases"));
         if(!file_exists(base_path("app/Migrations/Seeds"))) mkdir(base_path("app/Migrations/Seeds"));
 
-        ShellProcess::run('cd '.base_path('vendor/bin').' && phinx create --parser=php --configuration=../../configs/Phinx.php --path=../../app/Migrations/Databases '.$migrationName);
+        ShellProcess::run('cd '.base_path('vendor/bin').' && ./phinx create --parser=php --configuration=../../configs/Phinx.php --path=../../app/Migrations/Databases '.$migrationName);
     }
 
     public function migrate()
     {
-        ShellProcess::run('cd '.base_path('vendor/bin').' && phinx migrate --parser=php --configuration=../../configs/Phinx.php');
+        ShellProcess::run('cd '.base_path('vendor/bin').' && ./phinx migrate --parser=php --configuration=../../configs/Phinx.php');
     }
 
 }
