@@ -65,6 +65,10 @@ class Super
         }
     }
 
+    private function responseCode(int $code) {
+        return in_array($code,[200,400,401,404,403,500]) ? $code : 500;
+    }
+
     public function run() {
         try {
             $response = null;
@@ -80,7 +84,7 @@ class Super
             echo $response;
 
         } catch (\Throwable $e) {
-            http_response_code($e->getCode()?:500);
+            http_response_code($this->responseCode($e->getCode()));
 
             if($this->config['logging_errors'] == "true") {
                 logging($e);
