@@ -72,17 +72,16 @@ if(!function_exists('request')) {
      */
     function request($name = null, $default = null, $sanitize = false) {
         $value = $_REQUEST;
+        $value = array_merge($value, $_FILES);
         if($name) {
             $value = (isset($value[$name]) && $value[$name])?$value[$name]:$default;
             $value = ($sanitize) ? htmlspecialchars($value, ENT_COMPAT, "UTF-8") : $value;
-            return $value;
         } else {
             if($sanitize) {
                 foreach($value as $key=>$val) $value[$key] = htmlspecialchars($val);
             }
-
-            return $value;
         }
+        return $value;
     }
 }
 
