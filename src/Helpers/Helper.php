@@ -73,6 +73,7 @@ if(!function_exists("redirect_back")) {
         }
 
         header("location: ".$_SERVER['HTTP_REFERER'], false, 301);
+        return false;
         exit;
     }
 }
@@ -89,6 +90,7 @@ if(!function_exists("redirect")) {
 
         $url = strpos($path,'http')!==false?$path:base_url($path);
         header("location: ".$url, false, 301);
+        return false;
         exit;
     }
 }
@@ -98,7 +100,7 @@ if(!function_exists("logging")) {
      * @param $content
      * @param string $type
      */
-    function logging($content, $type = "error") {
+    function logging($content, string $type = "error") {
         file_put_contents(base_path("/logs/".date("Y-m-d").".log"), "[".date("Y-m-d H:i:s")."][".$type."] - ".$content."\n\n", FILE_APPEND);
     }
 }
