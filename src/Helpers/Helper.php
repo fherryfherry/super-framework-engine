@@ -118,7 +118,7 @@ if(!function_exists("var_min_export")) {
         $array = preg_replace(["/\s*array\s\($/", "/\)(,)?$/", "/\s=>\s$/"], [NULL, ']$1', ' => ['], $array);
         $export = join(PHP_EOL, array_filter(["["] + $array));
         $export = preg_replace("/[0-9]+ \=\>/i", '', $export);
-        if ((bool)$return) return $export; else echo $export;
+        if ($return) return $export; else echo $export;
     }
 }
 
@@ -134,14 +134,18 @@ if(!function_exists("config")) {
         if($config_data = get_singleton("config_".$split_name[0])) {
             return $config_data[$split_name[1]];
         } else {
-            if($split_name[0] == "default") {
-                $config_data = include base_path("configs/App.php");
-            } else {
-                $config_data = include base_path("app/Modules/".$split_name[0]."/Configs/App.php");
+            try {
+                if($split_name[0] == "default") {
+                    $config_data = include base_path("configs/App.php");
+                } else {
+                    $config_data = include base_path("app/Modules/".$split_name[0]."/Configs/App.php");
+                }
+                put_singleton("config_".$split_name[0], $config_data);
+                $key = $split_name[1];
+                return $config_data[$key] ?? $default;
+            } catch (Exception $e) {
+                return $default;
             }
-            put_singleton("config_".$split_name[0], $config_data);
-            $key = $split_name[1];
-            return isset($config_data[$key]) ? $config_data[$key] : $default;
         }
     }
 }
