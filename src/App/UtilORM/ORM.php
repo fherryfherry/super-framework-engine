@@ -33,7 +33,7 @@ class ORM
 
     /**
      * To create a connection only
-     * @return \PDO
+     * @return static
      */
     public static function createConnection() {
         $config = include base_path("configs/Database.php");
@@ -51,7 +51,7 @@ class ORM
             self::$dbConn->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
         }
 
-        return self::$dbConn;
+        return new static(self::$dbConn);
     }
 
     public function getInstance() {
