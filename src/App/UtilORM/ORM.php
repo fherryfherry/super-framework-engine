@@ -22,6 +22,8 @@ class ORM
     private $order_by;
     private $group_by;
     private $having;
+    private static $dbConn;
+    private static $driver;
 
     public function __construct(\PDO $connection)
     {
@@ -35,19 +37,21 @@ class ORM
      */
     public static function createConnection() {
         $config = include base_path("configs/Database.php");
-        $connection = null;
-        if($config['driver'] == "sqlsrv") {
-            $connection = Sqlsrv::createPDO($config);
-        } elseif ($config['driver'] == "pgsql") {
-            $connection = Pgsql::createPDO($config);
-        } elseif ($config['driver'] == "sqlite") {
-            $connection = Sqlite::createPDO($config);
-        } else {
-            $connection = Mysql::createPDO($config);
-            $connection->setAttribute(\PDO::ATTR_EMULATE_PREPARES, false);
+        if(!isset(self::$dbConn)) {
+            if($config['driver'] == "sqlsrv") {
+                self::$dbConn = Sqlsrv::createPDO($config);
+            } elseif ($config['driver'] == "pgsql") {
+                self::$dbConn = Pgsql::createPDO($config);
+            } elseif ($config['driver'] == "sqlite") {
+                self::$dbConn = Sqlite::createPDO($config);
+            } else {
+                self::$dbConn = Mysql::createPDO($config);
+                self::$dbConn->setAttribute(\PDO::ATTR_EMULATE_PREPARES, false);
+            }
+            self::$dbConn->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
         }
-        $connection->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
-        return $connection;
+
+        return self::$dbConn;
     }
 
     public function getInstance() {
@@ -70,16 +74,19 @@ class ORM
     }
 
     private function driver() {
-        if($this->config['driver'] == "sqlsrv") {
-            return new Sqlsrv($this->connection, $this->table, $this->select, $this->join, $this->join_type, $this->where, $this->limit, $this->offset, $this->order_by, $this->group_by, $this->having);
-        } else if($this->config['driver'] == "pgsql") {
-            return new Pgsql($this->connection, $this->table, $this->select, $this->join, $this->join_type, $this->where, $this->limit, $this->offset, $this->order_by, $this->group_by, $this->having);
-        }else if($this->config['driver'] == "sqlite") {
-            return new Sqlite($this->connection, $this->table, $this->select, $this->join, $this->join_type, $this->where, $this->limit, $this->offset, $this->order_by, $this->group_by, $this->having);
-        } else {
-            // MySQL
-            return new Mysql($this->connection, $this->table, $this->select, $this->join, $this->join_type, $this->where, $this->limit, $this->offset, $this->order_by, $this->group_by, $this->having);
+        if(!isset(self::$driver)) {
+            if($this->config['driver'] == "sqlsrv") {
+                self::$driver = new Sqlsrv($this->connection, $this->table, $this->select, $this->join, $this->join_type, $this->where, $this->limit, $this->offset, $this->order_by, $this->group_by, $this->having);
+            } else if($this->config['driver'] == "pgsql") {
+                self::$driver = new Pgsql($this->connection, $this->table, $this->select, $this->join, $this->join_type, $this->where, $this->limit, $this->offset, $this->order_by, $this->group_by, $this->having);
+            }else if($this->config['driver'] == "sqlite") {
+                self::$driver = new Sqlite($this->connection, $this->table, $this->select, $this->join, $this->join_type, $this->where, $this->limit, $this->offset, $this->order_by, $this->group_by, $this->having);
+            } else {
+                self::$driver = new Mysql($this->connection, $this->table, $this->select, $this->join, $this->join_type, $this->where, $this->limit, $this->offset, $this->order_by, $this->group_by, $this->having);
+            }
         }
+
+        return self::$driver;
     }
 
     /**
