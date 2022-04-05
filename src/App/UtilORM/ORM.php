@@ -74,19 +74,17 @@ class ORM
     }
 
     private function driver() {
-        if(!isset(self::$driver)) {
-            if($this->config['driver'] == "sqlsrv") {
-                self::$driver = new Sqlsrv($this->connection, $this->table, $this->select, $this->join, $this->join_type, $this->where, $this->limit, $this->offset, $this->order_by, $this->group_by, $this->having);
-            } else if($this->config['driver'] == "pgsql") {
-                self::$driver = new Pgsql($this->connection, $this->table, $this->select, $this->join, $this->join_type, $this->where, $this->limit, $this->offset, $this->order_by, $this->group_by, $this->having);
-            }else if($this->config['driver'] == "sqlite") {
-                self::$driver = new Sqlite($this->connection, $this->table, $this->select, $this->join, $this->join_type, $this->where, $this->limit, $this->offset, $this->order_by, $this->group_by, $this->having);
-            } else {
-                self::$driver = new Mysql($this->connection, $this->table, $this->select, $this->join, $this->join_type, $this->where, $this->limit, $this->offset, $this->order_by, $this->group_by, $this->having);
-            }
+        if($this->config['driver'] == "sqlsrv") {
+            $driver = new Sqlsrv($this->connection, $this->table, $this->select, $this->join, $this->join_type, $this->where, $this->limit, $this->offset, $this->order_by, $this->group_by, $this->having);
+        } else if($this->config['driver'] == "pgsql") {
+            $driver = new Pgsql($this->connection, $this->table, $this->select, $this->join, $this->join_type, $this->where, $this->limit, $this->offset, $this->order_by, $this->group_by, $this->having);
+        }else if($this->config['driver'] == "sqlite") {
+            $driver = new Sqlite($this->connection, $this->table, $this->select, $this->join, $this->join_type, $this->where, $this->limit, $this->offset, $this->order_by, $this->group_by, $this->having);
+        } else {
+            $driver = new Mysql($this->connection, $this->table, $this->select, $this->join, $this->join_type, $this->where, $this->limit, $this->offset, $this->order_by, $this->group_by, $this->having);
         }
 
-        return self::$driver;
+        return $driver;
     }
 
     /**
