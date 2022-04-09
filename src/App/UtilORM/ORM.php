@@ -12,9 +12,9 @@ class ORM
     private $config;
     private $connection;
     private $table;
-    private $primary_key = "id";
     private $select = "*";
     private $where;
+    private $whereBinds;
     private $join;
     private $join_type;
     private $limit;
@@ -23,7 +23,6 @@ class ORM
     private $group_by;
     private $having;
     private static $dbConn;
-    private static $driver;
 
     public function __construct(\PDO $connection)
     {
@@ -74,14 +73,15 @@ class ORM
     }
 
     private function driver() {
+        $arguments = [$this->connection, $this->table, $this->select, $this->where, $this->whereBinds, $this->limit, $this->offset, $this->order_by, $this->group_by, $this->having, $this->join, $this->join_type];
         if($this->config['driver'] == "sqlsrv") {
-            $driver = new Sqlsrv($this->connection, $this->table, $this->select, $this->join, $this->join_type, $this->where, $this->limit, $this->offset, $this->order_by, $this->group_by, $this->having);
+            $driver = new Sqlsrv($arguments);
         } else if($this->config['driver'] == "pgsql") {
-            $driver = new Pgsql($this->connection, $this->table, $this->select, $this->join, $this->join_type, $this->where, $this->limit, $this->offset, $this->order_by, $this->group_by, $this->having);
+            $driver = new Pgsql($arguments);
         }else if($this->config['driver'] == "sqlite") {
-            $driver = new Sqlite($this->connection, $this->table, $this->select, $this->join, $this->join_type, $this->where, $this->limit, $this->offset, $this->order_by, $this->group_by, $this->having);
+            $driver = new Sqlite($arguments);
         } else {
-            $driver = new Mysql($this->connection, $this->table, $this->select, $this->join, $this->join_type, $this->where, $this->limit, $this->offset, $this->order_by, $this->group_by, $this->having);
+            $driver = new Mysql($arguments);
         }
 
         return $driver;
@@ -273,8 +273,12 @@ class ORM
      * @param string $where_query SQL where syntax
      * @return ORM $this
      */
-    public function where($where_query) {
+    public function where($where_query, array $bind_values = null) {
         $this->where[] = $where_query;
+        if($bind_values) {
+            $this->whereBinds[] = $bind_values;
+        }
+
         return $this;
     }
 
@@ -324,9 +328,26 @@ class ORM
      * @param $where_query
      * @return ORM $this
      */
-    public function whereIsset($var, $where_query) {
+    public function whereIsset($var, $where_query, array $bind_values = null) {
         if(isset($var) && $var!="") {
             $this->where[] = $where_query;
+            if($bind_values) {
+                $this->whereBinds[] = $bind_values;
+            }
+        }
+        return $this;
+    }
+
+    /**
+     * @param $varToTest
+     * @param $field
+     * @param $keyword
+     * @return $this
+     */
+    public function whereLike($varToTest, $field, $keyword) {
+        if(isset($varToTest) && $varToTest!="") {
+            $keyword = htmlentities($keyword);
+            $this->where[] = $field." LIKE '%".$keyword."%'";
         }
         return $this;
     }
@@ -443,25 +464,35 @@ class ORM
     }
 
     /**
-     * @param int $limit
+     * @param null $limit
      * @param int $offset
-     * @return array|null
+     * @param false $paging
+     * @return array|false|null
      * @throws \Exception
      */
-    public function all($limit = null, $offset = 0) {
+    public function all($limit = null, $offset = 0, $paging = false) {
         if($limit) $this->limit = $limit;
         if($offset) $this->offset = $offset;
-        return $this->driver()->all();
+        if($paging) {
+            return $this->paginate($limit);
+        } else {
+            return $this->driver()->all();
+        }
     }
 
     /**
      * @param null $limit
      * @param int $offset
-     * @return null
+     * @param false $paging
+     * @return array|false|null
      * @throws \Exception
      */
-    public function get($limit = null, $offset = 0) {
-        return $this->all($limit, $offset);
+    public function get($limit = null, $offset = 0, $paging = false) {
+        if($paging) {
+            return $this->paginate($limit);
+        } else {
+            return $this->all($limit, $offset);
+        }
     }
 
     /**
