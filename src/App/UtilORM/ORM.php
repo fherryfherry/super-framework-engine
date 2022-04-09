@@ -511,6 +511,30 @@ class ORM
     }
 
     /**
+     * @param $field
+     * @return int
+     */
+    public function max($field) {
+        return $this->driver()->max($field);
+    }
+
+    /**
+     * @param $field
+     * @return int
+     */
+    public function min($field) {
+        return $this->driver()->min($field);
+    }
+
+    /**
+     * @param $field
+     * @return int
+     */
+    public function avg($field) {
+        return $this->driver()->avg($field);
+    }
+
+    /**
      * @param $limit
      * @return array|null
      * @throws \Exception

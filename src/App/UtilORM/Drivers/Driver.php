@@ -371,6 +371,27 @@ class Driver
         return $stmt->fetch()[self::AGGREGATE_TOTAL_FIELD];
     }
 
+    public function max($field) {
+        $stmt = $this->connection->prepare($this->queryBuilder("MAX", $field, false));
+        $stmt->execute(array_merge(...$this->whereBinds));
+        $stmt->setFetchMode(\PDO::FETCH_ASSOC);
+        return $stmt->fetch()[self::AGGREGATE_TOTAL_FIELD];
+    }
+
+    public function min($field) {
+        $stmt = $this->connection->prepare($this->queryBuilder("MIN", $field, false));
+        $stmt->execute(array_merge(...$this->whereBinds));
+        $stmt->setFetchMode(\PDO::FETCH_ASSOC);
+        return $stmt->fetch()[self::AGGREGATE_TOTAL_FIELD];
+    }
+
+    public function avg($field) {
+        $stmt = $this->connection->prepare($this->queryBuilder("AVG", $field, false));
+        $stmt->execute(array_merge(...$this->whereBinds));
+        $stmt->setFetchMode(\PDO::FETCH_ASSOC);
+        return $stmt->fetch()[self::AGGREGATE_TOTAL_FIELD];
+    }
+
     public function listColumn($table) {
         $columns = [];
         $query = $this->selectQueryTemplate;
