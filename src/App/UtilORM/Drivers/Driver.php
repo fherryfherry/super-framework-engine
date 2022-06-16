@@ -137,7 +137,7 @@ class Driver
                 // Replace table
                 $this->last_query = str_replace(["{table}"],[$this->table],$this->last_query);
                 // Replace aggregate func
-                $this->last_query = str_replace(["{select}"],[self::AGGREGATE_COUNT_FUNC."(".$field.")"],$this->last_query);
+                $this->last_query = str_replace(["{select}"],[self::AGGREGATE_COUNT_FUNC."(".$field.") as ".self::AGGREGATE_TOTAL_FIELD],$this->last_query);
                 break;
             case "SUM":
                 $field = htmlentities($aggregateField);
@@ -146,7 +146,7 @@ class Driver
                 // Replace table
                 $this->last_query = str_replace(["{table}"],[$this->table],$this->last_query);
                 // Replace aggregate func
-                $this->last_query = str_replace(["{select}"],[self::AGGREGATE_SUM_FUNC."(".$field.")"],$this->last_query);
+                $this->last_query = str_replace(["{select}"],[self::AGGREGATE_SUM_FUNC."(".$field.") as ".self::AGGREGATE_TOTAL_FIELD],$this->last_query);
                 break;
             case "AVG":
                 $field = htmlentities($aggregateField);
@@ -155,7 +155,7 @@ class Driver
                 // Replace table
                 $this->last_query = str_replace(["{table}"],[$this->table],$this->last_query);
                 // Replace aggregate func
-                $this->last_query = str_replace(["{select}"],[self::AGGREGATE_AVG_FUNC."(".$field.")"],$this->last_query);
+                $this->last_query = str_replace(["{select}"],[self::AGGREGATE_AVG_FUNC."(".$field.") as ".self::AGGREGATE_TOTAL_FIELD],$this->last_query);
                 break;
             case "MIN":
                 $field = htmlentities($aggregateField);
@@ -164,7 +164,7 @@ class Driver
                 // Replace table
                 $this->last_query = str_replace(["{table}"],[$this->table],$this->last_query);
                 // Replace aggregate func
-                $this->last_query = str_replace(["{select}"],[self::AGGREGATE_MIN_FUNC."(".$field.")"],$this->last_query);
+                $this->last_query = str_replace(["{select}"],[self::AGGREGATE_MIN_FUNC."(".$field.") as ".self::AGGREGATE_TOTAL_FIELD],$this->last_query);
                 break;
             case "MAX":
                 $field = htmlentities($aggregateField);
@@ -173,7 +173,7 @@ class Driver
                 // Replace table
                 $this->last_query = str_replace(["{table}"],[$this->table],$this->last_query);
                 // Replace aggregate func
-                $this->last_query = str_replace(["{select}"],[self::AGGREGATE_MAX_FUNC."(".$field.")"],$this->last_query);
+                $this->last_query = str_replace(["{select}"],[self::AGGREGATE_MAX_FUNC."(".$field.") as ".self::AGGREGATE_TOTAL_FIELD],$this->last_query);
                 break;
             case "DELETE":
                 // Init last query
@@ -289,7 +289,7 @@ class Driver
         $total = count($fields);
         $values = [];
         for($i=0;$i<$total;$i++) {
-            $values[] = "(".implode(",:",$fields).")";
+            $values[] = "(:".implode($i.",:",$fields).$i.")";
         }
 
         $query = $this->insertQueryTemplate;
