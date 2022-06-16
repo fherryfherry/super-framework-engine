@@ -50,7 +50,7 @@ class Driver
 
         $this->selectQueryTemplate = "SELECT {select} FROM `{table}` {join} {where} {group_by} {having} {order_by} {limit} {offset}";
         $this->deleteQueryTemplate = "DELETE FROM `{table}` {join} {where}";
-        $this->insertQueryTemplate = "INSERT INTO ({fields}) VALUES {values}";
+        $this->insertQueryTemplate = "INSERT INTO `{table}` ({fields}) VALUES {values}";
         $this->updateQueryTemplate = "UPDATE `{table}` {join} SET {sets} {where}";
         $this->pdoQueryTemplate = "{driver}:host={host};dbname={database}";
         $this->randomFuncTemplate = "RAND()";
@@ -126,7 +126,7 @@ class Driver
                 // Init last query
                 $this->last_query = $this->selectQueryTemplate;
                 // Replace table
-                $this->last_query = str_replace(["{table}"],[$this->table],$this->last_query);
+                $this->last_query = str_replace(["{table}","{select}"],[$this->table,"*"],$this->last_query);
                 break;
             case "COUNT":
                 $field = ($aggregateField)?:$this->findPrimaryKey($this->table);
@@ -240,7 +240,7 @@ class Driver
     }
 
     private function cleansingQuery($query) {
-        return str_replace(["{join}","{where}","{group_by}","{having}","{order_by}","{limit}","{offset}"],"", $query);
+        return str_replace(["{select}","{join}","{where}","{group_by}","{having}","{order_by}","{limit}","{offset}"],"", $query);
     }
 
     /**
