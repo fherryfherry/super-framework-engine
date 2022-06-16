@@ -201,6 +201,8 @@ class Driver
             // Replace offset
             $this->last_query = str_replace("{offset}",$offset_sql,$this->last_query);
         }
+
+        $this->last_query = $this->cleansingQuery($this->last_query);
         return $this->last_query;
     }
 
@@ -237,6 +239,10 @@ class Driver
         return $join_sql;
     }
 
+    private function cleansingQuery($query) {
+        return str_replace(["{join}","{where}","{group_by}","{having}","{order_by}","{limit}","{offset}"],"", $query);
+    }
+
     /**
      * To update a record
      * @param array $array
@@ -249,6 +255,7 @@ class Driver
         }
         $query = $this->updateQueryTemplate;
         $query = str_replace(["{table}","{sets}","{where}","{join}"],[$this->table,implode(",",$sets),$this->_whereQuery(),$this->_joinQuery()],$query);
+        $query = $this->cleansingQuery($query);
         $stmt = $this->connection->prepare($query);
         $execArray = [];
         foreach($array as $key => $val) {
@@ -287,6 +294,7 @@ class Driver
 
         $query = $this->insertQueryTemplate;
         $query = str_replace(["{table}","{fields}","{values}"],[$this->table,implode(",",$fields),implode(",", $values)],$query);
+        $query = $this->cleansingQuery($query);
         $stmt = $this->connection->prepare($query);
         $execArray = [];
         foreach($array as $i=>$item) {
