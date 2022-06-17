@@ -288,7 +288,7 @@ class Driver
         $fields = array_keys($array[0]);
         $total = count($fields);
         $values = [];
-        for($i=0;$i<$total;$i++) {
+        for($i=0;$i<$array;$i++) {
             $values[] = "(:".implode($i.",:",$fields).$i.")";
         }
 
