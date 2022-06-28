@@ -318,7 +318,9 @@ class Driver
             $this->whereBinds[] = $id;
         }
 
-        return $this->connection->exec($this->queryBuilder("DELETE", null, false));
+        $query = $this->queryBuilder("DELETE", null, false);
+        $stmt = $this->connection->prepare($query);
+        $stmt->execute($this->whereBinds);
     }
 
     public function find($id = null) {
