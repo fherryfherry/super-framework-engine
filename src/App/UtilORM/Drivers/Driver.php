@@ -126,7 +126,7 @@ class Driver
                 // Init last query
                 $this->last_query = $this->selectQueryTemplate;
                 // Replace table
-                $this->last_query = str_replace(["{table}","{select}"],[$this->table,"*"],$this->last_query);
+                $this->last_query = str_replace(["{table}","{select}"],[$this->table,$this->select],$this->last_query);
                 break;
             case "COUNT":
                 $field = ($aggregateField)?:$this->table.'.'.$this->findPrimaryKey($this->table);

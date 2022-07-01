@@ -123,7 +123,7 @@ class Model
      */
     public static function findAllBy($column, $value, $limit = null, $offset = null) {
         return static::queryAll($limit, $offset, function(ORM $query) use ($column,$value) {
-            return $query->where($column." = '".$value."'");
+            return $query->where($column." = ?",[$value]);
         });
     }
 
@@ -144,12 +144,12 @@ class Model
                 if(stripos($key," ") !== false) {
                     $data->where("{$key} '{$val}'");
                 } else {
-                    $data->where("{$key} = '{$val}'");
+                    $data->where("{$key} = ?",[$val]);
                 }
             }
         } else {
             if($column & $value) {
-                $data->where("{$column} = '{$value}'");
+                $data->where("{$column} = ?",[$value]);
             }
         }
         return $data->orderBy($orderBy." ".$orderDir)->paginate($limit);
@@ -194,7 +194,7 @@ class Model
                 return $last_data;
             } else {
                 // Get record
-                $row = db(static::tableName())->where($column." = '".$value."'")->find();
+                $row = db(static::tableName())->where($column." = ?",[$value])->find();
                 if ($row) {
                     $data = static::modelSetter(new static(), $row);
                     put_singleton(basename(get_called_class()).'_findBy_'.$column.'_'.$value, $data);
@@ -226,9 +226,9 @@ class Model
             if(property_exists($this, "updated_at")) {
                 $data_array['updated_at'] = date('Y-m-d H:i:s');
             }
-            db(static::tableName())->where(static::primaryKey()." = '".$id."'")->update($data_array);
+            db(static::tableName())->where(static::primaryKey()." = ?", [$id])->update($data_array);
         } else {
-            if(property_exists($this, "created_at")) {
+            if(property_exists($this, "created_at") && !isset($data_array['created_at'])) {
                 $data_array['created_at'] = date('Y-m-d H:i:s');
             }
             $id = db(static::tableName())->insert($data_array);
@@ -244,7 +244,7 @@ class Model
      */
     public static function delete($id) {
         if(static::isSoftDelete()) {
-            db(static::tableName())->where(static::primaryKey()." = '".htmlentities($id)."'")->update(["deleted_at"=>date("Y-m-d H:i:s")]);
+            db(static::tableName())->where(static::primaryKey()." = ?",[$id])->update(["deleted_at"=>date("Y-m-d H:i:s")]);
         } else {
             db(static::tableName())->delete($id);
         }
@@ -267,11 +267,11 @@ class Model
      * @param string $where_raw
      * @throws \Exception
      */
-    public static function deleteWhere(string $where_raw) {
+    public static function deleteWhere(string $where_raw, $binds = []) {
         if(static::isSoftDelete()) {
-            db(static::tableName())->where($where_raw)->update(["deleted_at"=>date("Y-m-d H:i:s")]);
+            db(static::tableName())->where($where_raw, $binds)->update(["deleted_at"=>date("Y-m-d H:i:s")]);
         } else {
-            db(static::tableName())->where($where_raw)->delete();
+            db(static::tableName())->where($where_raw, $binds)->delete();
         }
     }
 
