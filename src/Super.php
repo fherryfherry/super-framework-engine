@@ -84,7 +84,8 @@ class Super
             echo $response;
 
         } catch (\Throwable $e) {
-            http_response_code($this->responseCode($e->getCode()));
+            $code = $this->responseCode(intval($e->getCode()));
+            http_response_code($code);
 
             if($this->config['logging_errors'] == "true") {
                 logging($e);
