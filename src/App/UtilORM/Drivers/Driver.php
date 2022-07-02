@@ -251,7 +251,7 @@ class Driver
     public function update(array $array) {
         $sets = [];
         foreach($array as $key=>$value) {
-            $sets[] = $key."= :".$key;
+            $sets[] = $key."= ?";
         }
         $query = $this->updateQueryTemplate;
         $query = str_replace(["{table}","{sets}","{where}","{join}"],[$this->table,implode(",",$sets),$this->_whereQuery(),$this->_joinQuery()],$query);
@@ -259,8 +259,9 @@ class Driver
         $stmt = $this->connection->prepare($query);
         $execArray = [];
         foreach($array as $key => $val) {
-            $execArray[":" . $key] = $val;
+            $execArray[] = $val;
         }
+        $execArray = array_merge($execArray, $this->whereBinds);
         $stmt->execute($execArray);
         return $stmt;
     }
