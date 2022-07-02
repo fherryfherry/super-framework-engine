@@ -276,9 +276,12 @@ class ORM
     public function where($where_query, array $bind_values = null) {
         $this->where[] = $where_query;
         if($bind_values) {
-            $this->whereBinds[] = $bind_values;
+            if(is_array($bind_values)) {
+                $this->whereBinds = ($this->whereBinds)?array_merge($this->whereBinds, $bind_values) : $bind_values;
+            } else {
+                $this->whereBinds[] = $bind_values;
+            }
         }
-
         return $this;
     }
 
@@ -332,7 +335,11 @@ class ORM
         if(isset($var) && $var!="") {
             $this->where[] = $where_query;
             if($bind_values) {
-                $this->whereBinds[] = $bind_values;
+                if(is_array($bind_values)) {
+                    $this->whereBinds = ($this->whereBinds)?array_merge($this->whereBinds, $bind_values) : $bind_values;
+                } else {
+                    $this->whereBinds[] = $bind_values;
+                }
             }
         }
         return $this;
