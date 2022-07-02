@@ -337,21 +337,19 @@ class Driver
 
     public function all() {
         $stmt = $this->connection->prepare($this->queryBuilder());
-        $stmt->execute(array_merge(...$this->whereBinds));
+        $stmt->execute($this->whereBinds);
         $stmt->setFetchMode(\PDO::FETCH_ASSOC);
         return $stmt->fetchAll();
     }
 
 
     public function paginate() {
-
-        $where_binds = array_merge(...$this->whereBinds);
         $page = request_int('page', 1);
         $this->offset = ($page - 1) * $this->limit;
 
         $query = $this->queryBuilder();
         $stmt = $this->connection->prepare($query);
-        $stmt->execute($where_binds);
+        $stmt->execute($this->whereBinds);
         $stmt->setFetchMode(\PDO::FETCH_ASSOC);
 
         $data = [];
@@ -370,35 +368,35 @@ class Driver
 
     public function count() {
         $stmt = $this->connection->prepare($this->queryBuilder("COUNT", null,false, true, true));
-        $stmt->execute(array_merge(...$this->whereBinds));
+        $stmt->execute($this->whereBinds);
         $stmt->setFetchMode(\PDO::FETCH_ASSOC);
         return $stmt->fetch()[self::AGGREGATE_TOTAL_FIELD];
     }
 
     public function sum($field) {
         $stmt = $this->connection->prepare($this->queryBuilder("SUM", $field, false));
-        $stmt->execute(array_merge(...$this->whereBinds));
+        $stmt->execute($this->whereBinds);
         $stmt->setFetchMode(\PDO::FETCH_ASSOC);
         return $stmt->fetch()[self::AGGREGATE_TOTAL_FIELD];
     }
 
     public function max($field) {
         $stmt = $this->connection->prepare($this->queryBuilder("MAX", $field, false));
-        $stmt->execute(array_merge(...$this->whereBinds));
+        $stmt->execute($this->whereBinds);
         $stmt->setFetchMode(\PDO::FETCH_ASSOC);
         return $stmt->fetch()[self::AGGREGATE_TOTAL_FIELD];
     }
 
     public function min($field) {
         $stmt = $this->connection->prepare($this->queryBuilder("MIN", $field, false));
-        $stmt->execute(array_merge(...$this->whereBinds));
+        $stmt->execute($this->whereBinds);
         $stmt->setFetchMode(\PDO::FETCH_ASSOC);
         return $stmt->fetch()[self::AGGREGATE_TOTAL_FIELD];
     }
 
     public function avg($field) {
         $stmt = $this->connection->prepare($this->queryBuilder("AVG", $field, false));
-        $stmt->execute(array_merge(...$this->whereBinds));
+        $stmt->execute($this->whereBinds);
         $stmt->setFetchMode(\PDO::FETCH_ASSOC);
         return $stmt->fetch()[self::AGGREGATE_TOTAL_FIELD];
     }
