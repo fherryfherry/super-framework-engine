@@ -330,7 +330,7 @@ class Driver
             $this->where[] = $this->table.".".$this->findPrimaryKey($this->table)." = ?";
             $this->whereBinds[] = $id;
         }
-        $stmt = $this->connection->prepare($this->queryBuilder("SELECT", null, false, true, true));
+        $stmt = $this->connection->prepare($this->queryBuilder("SELECT", null, true, true, true));
         $stmt->setFetchMode(\PDO::FETCH_ASSOC);
         $stmt->execute($this->whereBinds);
         return $stmt->fetch();
