@@ -294,6 +294,19 @@ class ORM
         return $this;
     }
 
+
+    public function whereDate($field,$value) {
+        return $this->where("DATE(".$field.")=?",[$value]);
+    }
+
+    public function whereYesterday($field) {
+        return $this->where("DATE(".$field.")=DATE_SUB(CURDATE(),INTERVAL 1 DAY)");
+    }
+
+    public function whereLastWeekUntilToday($field) {
+        return $this->where("DATE(".$field.") >= DATE_SUB(CURDATE(),INTERVAL 7 DAY)");
+    }
+
     /**
      * @param $field
      * @return ORM
@@ -309,8 +322,8 @@ class ORM
      * @return ORM
      */
     public function whereIn($field, array $array) {
-        $array = implode("','",$array);
-        $this->where[] = $field." IN ('".$array."')";
+        $array = implode('","',$array);
+        $this->where[] = $field.' IN ("'.$array.'")';
         return $this;
     }
 
@@ -320,8 +333,8 @@ class ORM
      * @return ORM
      */
     public function whereNotIn($field, array $array) {
-        $array = implode("','",$array);
-        $this->where[] = $field." NOT IN ('".$array."')";
+        $array = implode('","',$array);
+        $this->where[] = $field.' NOT IN ("'.$array.'")';
         return $this;
     }
 
@@ -345,6 +358,11 @@ class ORM
         return $this;
     }
 
+
+    public function whereWhen($var, $where_query, array $bind_values = null) {
+        return $this->whereIsset($var, $where_query, $bind_values);
+    }
+
     /**
      * @param $varToTest
      * @param $field
@@ -366,6 +384,14 @@ class ORM
     public function orderByRandom() {
         $this->order_by = $this->driver()->orderByRandom();
         return $this;
+    }
+
+    /**
+     * Order by id latest
+     * @return $this
+     */
+    public function orderByLatest() {
+        return $this->orderBy($this->table.".".$this->findPrimaryKey($this->table)." desc");
     }
 
     /**
