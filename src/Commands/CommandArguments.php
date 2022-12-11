@@ -19,7 +19,7 @@ trait CommandArguments
             $result[$key] = $val;
         }
         if(isset($result[$argument])) {
-            return $result[$argument];
+            return ltrim($result[$argument],"--".$argument."=");
         } else {
             return null;
         }
