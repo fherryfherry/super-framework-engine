@@ -72,6 +72,9 @@ class Model
      */
     private static function queryAll($limit, $offset, callable $query = null) {
         $data = db(static::tableName());
+        if(static::isSoftDelete()) {
+            $data->whereNull("deleted_at");
+        }
         foreach(static::columns() as $column) {
             $data->addSelect(static::tableName().".".$column);
         }
@@ -139,6 +142,9 @@ class Model
     public static function findAllByPaginate($column = null, $value = null, $limit = 10, $orderBy = "id", $orderDir = "desc")
     {
         $data = db(static::tableName());
+        if(static::isSoftDelete()) {
+            $data->whereNull("deleted_at");
+        }
         if(is_array($column)) {
             foreach($column as $key => $val) {
                 if(stripos($key," ") !== false) {
@@ -248,6 +254,14 @@ class Model
         } else {
             db(static::tableName())->delete($id);
         }
+    }
+
+    /**
+     * @param $id
+     * @throws \Exception
+     */
+    public static function hardDelete($id) {
+        db(static::tableName())->delete($id);
     }
 
     /**
