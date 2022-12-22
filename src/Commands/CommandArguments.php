@@ -16,10 +16,13 @@ trait CommandArguments
             $argArr = explode("=",$arg);
             $key = ltrim(ltrim($argArr[0],"-"),"-");
             $val = isset($argArr[1]) ? $argArr[1] : true;
+            if(is_string($val)) {
+                $val = str_replace("--".$argument."=","",$val);
+            }
             $result[$key] = $val;
         }
         if(isset($result[$argument])) {
-            return ltrim($result[$argument],"--".$argument."=");
+            return $result[$argument];
         } else {
             return null;
         }
