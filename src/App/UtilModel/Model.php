@@ -130,6 +130,19 @@ class Model
         });
     }
 
+    public static function paginate($limit = 10, $orderBy = "id", $orderDir = "desc", callable $query = null) {
+        $data = db(static::tableName());
+        if(static::isSoftDelete()) {
+            $data->whereNull("deleted_at");
+        }
+
+        if($query != null) {
+            $data = call_user_func($query, $data);
+        }
+
+        return $data->orderBy($orderBy." ".$orderDir)->paginate($limit);
+    }
+
     /**
      * @param $column
      * @param $value

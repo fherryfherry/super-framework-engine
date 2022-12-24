@@ -9,26 +9,26 @@ if(!function_exists("request_url_is")) {
      */
     function request_url_is($path_param) {
         $paths = is_array($path_param)?$path_param : [ $path_param ];
-
+        $currentURL = get_current_url(null, false);
+        $currentURL = parse_url($currentURL)['path'];
+        $currentURL = ltrim($currentURL, '/');
         foreach($paths as $path) {
+            $path = ltrim($path,'/');
             if(substr($path,-1,1)=="*") {
-                $pattern = str_replace("*","(.*)", $path);
+                $pattern = str_replace("*","", $path);
                 $pattern = str_replace("/","\/", $pattern);
-
-                $pattern2 = rtrim($path,"*");
-                $pattern2 = str_replace("*","(.*)", $pattern2);
-                $pattern2 = str_replace("/","\/", $pattern2);
-
-                $pattern = '/(.*)('.$pattern.'|'.$pattern2.')$/';
+                $pattern = '/^'.$pattern.'/';
             } else {
-                $pattern = str_replace("*","(.*)", $path);
-                $pattern = str_replace("/","\/", $pattern);
-                $pattern = '/(.*)'.$pattern.'$/';
+                $pattern = str_replace("/","\/", $path);
+                $pattern = '/^'.$pattern.'$/';
             }
 
-            if(preg_match($pattern, get_current_url(null, false)) === 1) {
+            $check = preg_match($pattern, $currentURL);
+            if($check) {
                 return true;
             }
+
+            logging("url_is: Path:".$path." -> Pattern:".$pattern." -> ".$currentURL);
         }
         return false;
     }
