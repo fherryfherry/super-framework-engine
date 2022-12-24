@@ -22,7 +22,11 @@ class CommandRunner
     }
 
     private function loadHelpers() {
-        foreach($this->bootstrap['helper'] as $helper) require_once base_path(lcfirst(str_replace("\\",DIRECTORY_SEPARATOR,$helper['path'])).".php");
+        foreach($this->bootstrap['helper'] as $helper) {
+            $helperPath = $helper['path'];
+            $filePath = lcfirst(str_replace("\\",DIRECTORY_SEPARATOR,$helper['path'])).".php";
+            require_once base_path($filePath);
+        }
     }
 
     private function header()
