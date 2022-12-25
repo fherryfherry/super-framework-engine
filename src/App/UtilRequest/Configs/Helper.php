@@ -27,8 +27,6 @@ if(!function_exists("request_url_is")) {
             if($check) {
                 return true;
             }
-
-            logging("url_is: Path:".$path." -> Pattern:".$pattern." -> ".$currentURL);
         }
         return false;
     }
