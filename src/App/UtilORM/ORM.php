@@ -468,6 +468,15 @@ class ORM
     }
 
     /**
+     * @param array $array
+     * @return mixed
+     * @throws \Exception
+     */
+    public function insertBulk(array $array) {
+        return $this->driver()->insertBatch($array);
+    }
+
+    /**
      * @param int|array|null $id
      * @return mixed
      * @throws \Exception
@@ -532,7 +541,7 @@ class ORM
      * @return int
      */
     public function count() {
-        return $this->driver()->count();
+        return (int) $this->driver()->count();
     }
 
     /**
@@ -540,7 +549,7 @@ class ORM
      * @return int
      */
     public function sum($field) {
-        return $this->driver()->sum($field);
+        return (int) $this->driver()->sum($field);
     }
 
     /**
