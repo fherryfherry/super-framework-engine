@@ -145,7 +145,7 @@ class ORM
 
     public function db(?string $table = null): self
     {
-        $this->table = $table ? preg_replace('/[^a-zA-Z0-9_]/', '', $table) : null;
+        $this->table = $table;
         return $this;
     }
 

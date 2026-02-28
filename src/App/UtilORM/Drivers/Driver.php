@@ -53,10 +53,10 @@ class Driver
             $this->join_type = $arguments[11];
         }
 
-        $this->selectQueryTemplate = "SELECT {select} FROM `{table}` {join} {where} {group_by} {having} {order_by} {limit} {offset}";
-        $this->deleteQueryTemplate = "DELETE FROM `{table}` {join} {where}";
-        $this->insertQueryTemplate = "INSERT INTO `{table}` ({fields}) VALUES {values}";
-        $this->updateQueryTemplate = "UPDATE `{table}` {join} SET {sets} {where}";
+        $this->selectQueryTemplate = "SELECT {select} FROM {table} {join} {where} {group_by} {having} {order_by} {limit} {offset}";
+        $this->deleteQueryTemplate = "DELETE FROM {table} {join} {where}";
+        $this->insertQueryTemplate = "INSERT INTO {table} ({fields}) VALUES {values}";
+        $this->updateQueryTemplate = "UPDATE {table} {join} SET {sets} {where}";
         $this->pdoQueryTemplate = "{driver}:host={host};dbname={database}";
         $this->randomFuncTemplate = "RAND()";
     }
@@ -339,7 +339,7 @@ class Driver
 
     protected function sanitizeTableName(string $table): string
     {
-        return preg_replace('/[^a-zA-Z0-9_]/', '', $table);
+        return $table;
     }
 
     public function listColumn(string $table): array
