@@ -37,7 +37,7 @@ class Sqlsrv extends Driver
 
     public function _offsetQuery(): string
     {
-        return (isset($this->offset))?" OFFSET ".htmlentities((string) $this->offset)." ROWS":"";
+        return ($this->offset > 0) ? " OFFSET " . htmlentities((string) $this->offset) . " ROWS" : "";
     }
 
     public function listTable(): array

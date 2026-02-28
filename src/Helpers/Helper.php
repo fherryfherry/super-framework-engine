@@ -138,12 +138,21 @@ if (!function_exists("var_min_export")) {
      */
     function var_min_export(mixed $expression, bool $return = false): mixed
     {
+        if (!is_array($expression)) {
+            $export = var_export($expression, true);
+            if ($return) {
+                return $export;
+            }
+            echo $export;
+            return null;
+        }
+
         $export = var_export($expression, true);
         $export = (string) preg_replace("/^([ ]*)(.*)/m", '$1$1$2', $export);
         $array = preg_split("/\r\n|\n|\r/", $export);
-        $array = (array) preg_replace(["/\s*array\s\($/", "/\)(,)?$/", "/\s=>\s$/"], [null, ']$1', ' => ['], (array) $array);
+        $array = (array) preg_replace(["/\s*array\s\($/", "/\)(,)?$/", "/\s=>\s$/"], ['', ']$1', ' => ['], (array) $array);
         $export = implode(PHP_EOL, array_filter(["["] + $array));
-        $export = (string) preg_replace("/[0-9]+ \=\>/i", '', $export);
+        $export = (string) preg_replace("/^\s*[0-9]+ \=\>/m", '', $export);
         if ($return) {
             return $export;
         }

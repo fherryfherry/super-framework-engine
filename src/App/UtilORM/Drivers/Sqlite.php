@@ -51,9 +51,9 @@ class Sqlite extends Driver
     public function _offsetQuery(): string
     {
         // SQLite requires LIMIT if OFFSET is used
-        if (isset($this->offset) && !isset($this->limit)) {
+        if ($this->offset > 0 && !isset($this->limit)) {
             return " LIMIT -1 OFFSET " . $this->offset;
         }
-        return isset($this->offset) ? " OFFSET " . $this->offset : "";
+        return ($this->offset > 0) ? " OFFSET " . $this->offset : "";
     }
 }

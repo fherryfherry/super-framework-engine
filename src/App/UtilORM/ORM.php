@@ -239,12 +239,18 @@ class ORM
 
     public function whereIn(string $field, array $array): self
     {
+        if (count($array) === 0) {
+            return $this->where("1=0");
+        }
         $placeholders = implode(',', array_fill(0, count($array), '?'));
         return $this->where($field . " IN ($placeholders)", $array);
     }
 
     public function whereNotIn(string $field, array $array): self
     {
+        if (count($array) === 0) {
+            return $this;
+        }
         $placeholders = implode(',', array_fill(0, count($array), '?'));
         return $this->where($field . " NOT IN ($placeholders)", $array);
     }
@@ -342,7 +348,10 @@ class ORM
         if ($limit !== null) {
             $this->limit = $limit;
         }
-        $this->offset = $offset;
+
+        if ($offset > 0) {
+            $this->offset = $offset;
+        }
 
         $cacheKey = $this->getCacheKey("all_" . $limit . "_" . $offset);
         if ($this->cacheTTL !== null && $cached = get_singleton($cacheKey)) {

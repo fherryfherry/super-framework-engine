@@ -111,7 +111,7 @@ class Driver
 
     public function _offsetQuery(): string
     {
-        return isset($this->offset) ? " OFFSET " . $this->offset : "";
+        return ($this->offset > 0) ? " OFFSET " . $this->offset : "";
     }
 
     public function _limitQuery(): string
