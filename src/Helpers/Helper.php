@@ -130,6 +130,28 @@ if (!function_exists("logging")) {
     }
 }
 
+if (!function_exists("var_min_export")) {
+    /**
+     * @param mixed $expression
+     * @param bool $return
+     * @return mixed
+     */
+    function var_min_export(mixed $expression, bool $return = false): mixed
+    {
+        $export = var_export($expression, true);
+        $export = (string) preg_replace("/^([ ]*)(.*)/m", '$1$1$2', $export);
+        $array = preg_split("/\r\n|\n|\r/", $export);
+        $array = (array) preg_replace(["/\s*array\s\($/", "/\)(,)?$/", "/\s=>\s$/"], [null, ']$1', ' => ['], (array) $array);
+        $export = implode(PHP_EOL, array_filter(["["] + $array));
+        $export = (string) preg_replace("/[0-9]+ \=\>/i", '', $export);
+        if ($return) {
+            return $export;
+        }
+        echo $export;
+        return null;
+    }
+}
+
 if (!function_exists("config")) {
     /**
      * @param string $name
