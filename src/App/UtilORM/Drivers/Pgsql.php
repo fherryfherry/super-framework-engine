@@ -11,7 +11,8 @@ class Pgsql extends Driver
      * @param string $table
      * @return false|mixed|null
      */
-    public function findPrimaryKey(string $table) {
+    public function findPrimaryKey(string $table): ?string {
+        $table = $this->sanitizeTableName($table);
         $query = $this->connection->query("SELECT a.attname AS name, format_type(a.atttypid, a.atttypmod) AS type
 FROM
     pg_class AS c

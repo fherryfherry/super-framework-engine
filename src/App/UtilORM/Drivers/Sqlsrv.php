@@ -16,7 +16,8 @@ class Sqlsrv extends Driver
         $this->randomFuncTemplate = "NEWID()";
     }
 
-    public function findPrimaryKey($table) {
+    public function findPrimaryKey(string $table): ?string {
+        $table = $this->sanitizeTableName($table);
         if($pk = get_singleton("findPrimaryKey_".$table)) {
             return $pk;
         } else {
@@ -30,16 +31,16 @@ class Sqlsrv extends Driver
         }
     }
 
-    public function _limitQuery() {
-        return (isset($this->limit))?" TOP ".htmlentities($this->limit):"";
+    public function _limitQuery(): string {
+        return (isset($this->limit))?" TOP ".htmlentities((string) $this->limit):"";
     }
 
-    public function _offsetQuery()
+    public function _offsetQuery(): string
     {
-        return (isset($this->offset))?" OFFSET ".htmlentities($this->offset)." ROWS":"";
+        return (isset($this->offset))?" OFFSET ".htmlentities((string) $this->offset)." ROWS":"";
     }
 
-    public function listTable()
+    public function listTable(): array
     {
         $query = $this->connection->query("SELECT TABLE_NAME 
         FROM ".config("database.database").".INFORMATION_SCHEMA.TABLES 

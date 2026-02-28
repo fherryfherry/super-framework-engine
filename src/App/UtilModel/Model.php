@@ -1,305 +1,205 @@
 <?php
 
+declare(strict_types=1);
+
 namespace SuperFrameworkEngine\App\UtilModel;
 
+use Exception;
+use ReflectionClass;
+use ReflectionException;
+use ReflectionProperty;
 use SuperFrameworkEngine\App\UtilORM\ORM;
 
-class Model
+abstract class Model
 {
-    public function __construct(array $row = null) {
-        if($row) {
-            self::modelSetter($this, $row);
+    protected ?string $table = null;
+    protected string $primaryKey = "id";
+    protected array $attributes = [];
+
+    public function __construct(?array $row = null)
+    {
+        if ($row !== null) {
+            $this->fill($row);
         }
     }
 
-    private static function modelSetter($model, $row) {
-        foreach($row as $column => $value) {
-            $model->$column = $value;
+    public function fill(array $row): self
+    {
+        foreach ($row as $column => $value) {
+            $this->{$column} = $value;
         }
-        return $model;
+        return $this;
     }
 
-    public static function primaryKey() {
-        return (new static())->primaryKey ?: "id";
+    public static function tableName(): string
+    {
+        return (new static())->table ?? strtolower(basename(str_replace('\\', '/', static::class)));
     }
 
-    public static function tableName() {
-        return (new static())->table;
+    public static function primaryKeyName(): string
+    {
+        return (new static())->primaryKey;
     }
 
-    public static function count()
+    public static function beginTransaction(): void
+    {
+        ORM::beginTransaction();
+    }
+
+    public static function commit(): void
+    {
+        ORM::commit();
+    }
+
+    public static function rollback(): void
+    {
+        ORM::rollback();
+    }
+
+    public static function count(): int
     {
         return db(static::tableName())->count();
     }
 
-    /**
-     * @return ORM
-     */
-    public static function query() {
+    public static function query(): ORM
+    {
         return db(static::tableName());
     }
 
-    /**
-     * @throws \ReflectionException
-     */
-    private static function isSoftDelete() {
-        $class = new \ReflectionClass(static::class);
-        if($class->hasProperty("deleted_at")) {
-            return true;
-        } else {
+    public static function with(string ...$relations): ORM
+    {
+        return static::query()->with(...$relations);
+    }
+
+    private static function isSoftDelete(): bool
+    {
+        try {
+            $class = new ReflectionClass(static::class);
+            return $class->hasProperty("deleted_at");
+        } catch (ReflectionException) {
             return false;
         }
     }
 
-    /**
-     * @throws \ReflectionException
-     */
-    private static function columns() {
-        $class = new \ReflectionClass(static::class);
-        $result = [];
-        foreach($class->getProperties(\ReflectionProperty::IS_PUBLIC) as $property) {
-            $result[] = $property->getName();
-        }
-        return $result;
-    }
-
-    /**
-     * @param $limit
-     * @param $offset
-     * @param callable|null $query
-     * @return null
-     * @throws \Exception
-     */
-    private static function queryAll($limit, $offset, callable $query = null) {
-        $data = db(static::tableName());
-        if(static::isSoftDelete()) {
-            $data->whereNull("deleted_at");
-        }
-        foreach(static::columns() as $column) {
-            $data->addSelect(static::tableName().".".$column);
-        }
-
-        if(isset($query)) {
-            $data = call_user_func($query, $data);
-        }
-
-        return $data->all($limit, $offset);
-    }
-
-    /**
-     * @param array $data_array
-     * @return static
-     */
-    public static function loadArray(array $data_array) {
-        return static::modelSetter(new static(), $data_array);
-    }
-
-    /**
-     * @param $data_array
-     * @return static[]
-     */
-    public static function loadAllArray($data_array) {
-        $result = [];
-        foreach($data_array as $item) {
-            $result[] = static::modelSetter(new static(), $item);
-        }
-        return $result;
-    }
-
-    /**
-     * @param $limit
-     * @param $offset
-     * @return array
-     * @throws \Exception
-     */
-    public static function findAll($limit = null, $offset=null) {
-        return static::queryAll($limit, $offset);
-    }
-
-    /**
-     * @param $column
-     * @param $value
-     * @param null $limit
-     * @param null $offset
-     * @return null
-     * @throws \Exception
-     */
-    public static function findAllBy($column, $value, $limit = null, $offset = null) {
-        return static::queryAll($limit, $offset, function(ORM $query) use ($column,$value) {
-            return $query->where($column." = ?",[$value]);
-        });
-    }
-
-    public static function paginate($limit = 10, $orderBy = "id", $orderDir = "desc", callable $query = null) {
-        $data = db(static::tableName());
-        if(static::isSoftDelete()) {
-            $data->whereNull("deleted_at");
-        }
-
-        if($query != null) {
-            $data = call_user_func($query, $data);
-        }
-
-        return $data->orderBy($orderBy." ".$orderDir)->paginate($limit);
-    }
-
-    /**
-     * @param $column
-     * @param $value
-     * @param null $limit
-     * @param string $orderBy
-     * @param string $orderDir
-     * @return array|null
-     * @throws \Exception
-     */
-    public static function findAllByPaginate($column = null, $value = null, $limit = 10, $orderBy = "id", $orderDir = "desc")
+    private static function columns(): array
     {
-        $data = db(static::tableName());
-        if(static::isSoftDelete()) {
-            $data->whereNull("deleted_at");
-        }
-        if(is_array($column)) {
-            foreach($column as $key => $val) {
-                if(stripos($key," ") !== false) {
-                    $data->where("{$key} '{$val}'");
-                } else {
-                    $data->where("{$key} = ?",[$val]);
-                }
+        try {
+            $class = new ReflectionClass(static::class);
+            $result = [];
+            foreach ($class->getProperties(ReflectionProperty::IS_PUBLIC) as $property) {
+                $result[] = $property->getName();
             }
-        } else {
-            if($column & $value) {
-                $data->where("{$column} = ?",[$value]);
-            }
+            return $result;
+        } catch (ReflectionException) {
+            return [];
         }
-        return $data->orderBy($orderBy." ".$orderDir)->paginate($limit);
     }
 
-    /**
-     * @param $id
-     * @return null|$this
-     * @throws \Exception
-     */
-    public static function findById($id) {
-
-        if($id) {
-            if($last_data = get_singleton(basename(get_called_class()).'_findById_'.$id)) {
-                return $last_data;
-            } else {
-                // Get record
-                $row = db(static::tableName())->find($id);
-                if($row) {
-                    $data = static::modelSetter(new static(), $row);
-                    put_singleton(basename(get_called_class()).'_findById_'.$id, $data);
-                    return $data;
-                } else {
-                    return null;
-                }
-            }
-        } else {
+    public static function findById(mixed $id): ?static
+    {
+        if (!$id) {
             return null;
         }
 
-    }
+        $cacheKey = static::class . '_findById_' . $id;
+        if ($cached = get_singleton($cacheKey)) {
+            return $cached;
+        }
 
-    /**
-     * @param $column
-     * @param $value
-     * @return static
-     * @throws \Exception
-     */
-    public static function findBy($column, $value) {
-        if($column && $value) {
-            if($last_data = get_singleton(basename(get_called_class()).'_findBy_'.$column.'_'.$value)) {
-                return $last_data;
-            } else {
-                // Get record
-                $row = db(static::tableName())->where($column." = ?",[$value])->find();
-                if ($row) {
-                    $data = static::modelSetter(new static(), $row);
-                    put_singleton(basename(get_called_class()).'_findBy_'.$column.'_'.$value, $data);
-                    return $data;
-                } else {
-                    return null;
-                }
-            }
-        } else {
+        $row = db(static::tableName())->find($id);
+        if (!$row) {
             return null;
         }
+
+        $instance = new static($row);
+        put_singleton($cacheKey, $instance);
+        return $instance;
     }
 
+    public static function findBy(string $column, mixed $value): ?static
+    {
+        $cacheKey = static::class . '_findBy_' . $column . '_' . $value;
+        if ($cached = get_singleton($cacheKey)) {
+            return $cached;
+        }
 
-    /**
-     * @return $this
-     * @throws \Exception
-     */
-    public function save() {
-        $data_array = [];
-        foreach(static::columns() as $column) {
-            if(isset($this->$column) || $this->$column !== 0 || $this->$column === null) {
-                $data_array[ $column ] = $this->$column;
+        $row = db(static::tableName())->where($column . " = ?", [$value])->find();
+        if (!$row) {
+            return null;
+        }
+
+        $instance = new static($row);
+        put_singleton($cacheKey, $instance);
+        return $instance;
+    }
+
+    public static function all(?int $limit = null, int $offset = 0): array
+    {
+        $query = db(static::tableName());
+        if (static::isSoftDelete()) {
+            $query->whereNull("deleted_at");
+        }
+
+        $results = $query->all($limit, $offset);
+        return array_map(fn($row) => new static($row), $results);
+    }
+
+    public static function paginate(int $limit = 10, string $orderBy = "id", string $orderDir = "desc"): array
+    {
+        $query = db(static::tableName());
+        if (static::isSoftDelete()) {
+            $query->whereNull("deleted_at");
+        }
+
+        $data = $query->orderBy($orderBy . " " . $orderDir)->paginate($limit);
+        $data['data'] = array_map(fn($row) => new static($row), $data['data']);
+        return $data;
+    }
+
+    public function save(): self
+    {
+        $columns = static::columns();
+        $dataArray = [];
+        foreach ($columns as $column) {
+            if (isset($this->{$column})) {
+                $dataArray[$column] = $this->{$column};
             }
         }
 
-        $id = $this->{static::primaryKey()};
-        if($id) {
-            if(property_exists($this, "updated_at")) {
-                $data_array['updated_at'] = date('Y-m-d H:i:s');
+        $primaryKey = static::primaryKeyName();
+        $id = $this->{$primaryKey} ?? null;
+
+        if ($id) {
+            if (property_exists($this, "updated_at")) {
+                $dataArray['updated_at'] = date('Y-m-d H:i:s');
+                $this->updated_at = $dataArray['updated_at'];
             }
-            db(static::tableName())->where(static::primaryKey()." = ?", [$id])->update($data_array);
+            db(static::tableName())->where($primaryKey . " = ?", [$id])->update($dataArray);
         } else {
-            if(property_exists($this, "created_at") && !isset($data_array['created_at'])) {
-                $data_array['created_at'] = date('Y-m-d H:i:s');
+            if (property_exists($this, "created_at")) {
+                $dataArray['created_at'] = date('Y-m-d H:i:s');
+                $this->created_at = $dataArray['created_at'];
             }
-            $id = db(static::tableName())->insert($data_array);
+            $newId = db(static::tableName())->insert($dataArray);
+            $this->{$primaryKey} = $newId;
         }
 
-        $this->{static::primaryKey()} = $id;
         return $this;
     }
 
-    /**
-     * @param $id
-     * @throws \Exception
-     */
-    public static function delete($id) {
-        if(static::isSoftDelete()) {
-            db(static::tableName())->where(static::primaryKey()." = ?",[$id])->update(["deleted_at"=>date("Y-m-d H:i:s")]);
+    public static function delete(mixed $id): void
+    {
+        if (static::isSoftDelete()) {
+            db(static::tableName())
+                ->where(static::primaryKeyName() . " = ?", [$id])
+                ->update(["deleted_at" => date("Y-m-d H:i:s")]);
         } else {
             db(static::tableName())->delete($id);
         }
     }
 
-    /**
-     * @param $id
-     * @throws \Exception
-     */
-    public static function hardDelete($id) {
+    public static function hardDelete(mixed $id): void
+    {
         db(static::tableName())->delete($id);
     }
-
-    /**
-     * @param bool $hard
-     * @throws \ReflectionException
-     */
-    public static function deleteAll($hard = false) {
-        if(static::isSoftDelete() && !$hard) {
-            db(static::tableName())->update(["deleted_at"=>date("Y-m-d H:i:s")]);
-        } else {
-            db(static::tableName())->delete();
-        }
-    }
-
-    /**
-     * To delete a record by raw condition
-     * @param string $where_raw
-     * @throws \Exception
-     */
-    public static function deleteWhere(string $where_raw, $binds = []) {
-        if(static::isSoftDelete()) {
-            db(static::tableName())->where($where_raw, $binds)->update(["deleted_at"=>date("Y-m-d H:i:s")]);
-        } else {
-            db(static::tableName())->where($where_raw, $binds)->delete();
-        }
-    }
-
 }

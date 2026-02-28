@@ -39,23 +39,32 @@ class DataTable
         if($search = request('search')['value']) {
             if($this->searchable_columns) {
                 $likes = [];
+                $binds = [];
                 foreach($this->searchable_columns as $column) {
-                    $likes[] = $column." like '%".$search."%'";
+                    $likes[] = $column." LIKE ?";
+                    $binds[] = "%".$search."%";
                 }
-                $result->where("(".implode(" OR ",$likes).")");
+                $result->where("(".implode(" OR ",$likes).")", $binds);
             }
         }
 
         if(request('order')) {
-            $order_column_idx = request('order')[0]['column'];
+            $order_column_idx = (int) request('order')[0]['column'];
             $order_column = request('columns')[$order_column_idx]['data'];
             $order_column_dir = request('order')[0]['dir'];
+            
+            // Security: Whitelist order direction and sanitize column name
+            $order_column_dir = in_array(strtolower($order_column_dir), ['asc', 'desc']) ? $order_column_dir : 'desc';
+            $order_column = preg_replace('/[^a-zA-Z0-9_\.]/', '', $order_column);
+            
+            if($order_column) {
+                $result->orderBy($order_column." ".$order_column_dir);
+            }
         } else {
             $order_column = $this->table.".".db()->findPrimaryKey($this->table);
             $order_column_dir = "desc";
+            $result->orderBy($order_column." ".$order_column_dir);
         }
-
-        $result->orderBy("$order_column $order_column_dir");
         $result->offset(request_int('start'));
         $result->limit(request_int('length'));
         $data = $result->all();
@@ -80,10 +89,12 @@ class DataTable
         if($search = request('search')['value']) {
             if($this->searchable_columns) {
                 $likes = [];
+                $binds = [];
                 foreach($this->searchable_columns as $column) {
-                    $likes[] = $column." like '%".$search."%'";
+                    $likes[] = $column." LIKE ?";
+                    $binds[] = "%".$search."%";
                 }
-                $result->where("(".implode(" OR ",$likes).")");
+                $result->where("(".implode(" OR ",$likes).")", $binds);
             }
         }
 

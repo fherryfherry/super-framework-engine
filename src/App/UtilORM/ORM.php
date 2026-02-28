@@ -1,631 +1,476 @@
 <?php
 
+declare(strict_types=1);
+
 namespace SuperFrameworkEngine\App\UtilORM;
 
+use PDO;
 use SuperFrameworkEngine\App\UtilORM\Drivers\Mysql;
 use SuperFrameworkEngine\App\UtilORM\Drivers\Pgsql;
 use SuperFrameworkEngine\App\UtilORM\Drivers\Sqlite;
 use SuperFrameworkEngine\App\UtilORM\Drivers\Sqlsrv;
+use SuperFrameworkEngine\App\UtilORM\Drivers\Driver;
 
 class ORM
 {
-    private $config;
-    private $connection;
-    private $table;
-    private $select = "*";
-    private $where;
-    private $whereBinds;
-    private $join;
-    private $join_type;
-    private $limit;
-    private $offset;
-    private $order_by;
-    private $group_by;
-    private $having;
-    private static $dbConn;
+    private array $config;
+    private PDO $connection;
+    private ?string $table = null;
+    private string $select = "*";
+    private ?array $where = null;
+    private ?array $whereBinds = null;
+    private ?array $join = null;
+    private ?array $join_type = null;
+    private ?int $limit = null;
+    private ?int $offset = null;
+    private ?string $order_by = null;
+    private ?string $group_by = null;
+    private ?string $having = null;
+    private array $with = [];
+    private static ?PDO $dbConn = null;
 
-    public function __construct(\PDO $connection)
+    private ?int $cacheTTL = null;
+
+    public function __construct(PDO $connection)
     {
         $this->config = include base_path("configs/Database.php");
         $this->connection = $connection;
     }
 
-    /**
-     * To create a connection only
-     * @return static
-     */
-    public static function createConnection() {
-        $config = include base_path("configs/Database.php");
-        if(!isset(self::$dbConn)) {
-            if($config['driver'] == "sqlsrv") {
-                self::$dbConn = Sqlsrv::createPDO($config);
-            } elseif ($config['driver'] == "pgsql") {
-                self::$dbConn = Pgsql::createPDO($config);
-            } elseif ($config['driver'] == "sqlite") {
-                self::$dbConn = Sqlite::createPDO($config);
-            } else {
-                self::$dbConn = Mysql::createPDO($config);
-                self::$dbConn->setAttribute(\PDO::ATTR_EMULATE_PREPARES, false);
-            }
-            self::$dbConn->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
-        }
-
-        return new static(self::$dbConn);
+    public function remember(int $seconds): self
+    {
+        $this->cacheTTL = $seconds;
+        return $this;
     }
 
-    public function getInstance() {
+    public static function createConnection(): self
+    {
+        $config = include base_path("configs/Database.php");
+        if (self::$dbConn === null) {
+            self::$dbConn = match ($config['driver']) {
+                'sqlsrv' => Sqlsrv::createPDO($config),
+                'pgsql' => Pgsql::createPDO($config),
+                'sqlite' => Sqlite::createPDO($config),
+                default => Mysql::createPDO($config),
+            };
+
+            if ($config['driver'] !== 'sqlite') {
+                self::$dbConn->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
+            }
+            self::$dbConn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        }
+
+        return new self(self::$dbConn);
+    }
+
+    public static function beginTransaction(): void
+    {
+        self::createConnection()->connection->beginTransaction();
+    }
+
+    public static function commit(): void
+    {
+        self::createConnection()->connection->commit();
+    }
+
+    public static function rollback(): void
+    {
+        self::createConnection()->connection->rollback();
+    }
+
+    public function getInstance(): PDO
+    {
         return $this->connection;
     }
 
-    public function beginTransaction()
+    private function driver(): Driver
     {
-        $this->connection->beginTransaction();
+        $arguments = [
+            $this->connection, $this->table, $this->select, $this->where,
+            $this->whereBinds, $this->limit, $this->offset, $this->order_by,
+            $this->group_by, $this->having, $this->join, $this->join_type
+        ];
+
+        return match ($this->config['driver'] ?? 'mysql') {
+            'sqlsrv' => new Sqlsrv($arguments),
+            'pgsql' => new Pgsql($arguments),
+            'sqlite' => new Sqlite($arguments),
+            default => new Mysql($arguments),
+        };
     }
 
-    public function commit()
+    public function findPrimaryKey(string $table): ?string
     {
-        $this->connection->commit();
-    }
-
-    public function rollback()
-    {
-        $this->connection->rollback();
-    }
-
-    private function driver() {
-        $arguments = [$this->connection, $this->table, $this->select, $this->where, $this->whereBinds, $this->limit, $this->offset, $this->order_by, $this->group_by, $this->having, $this->join, $this->join_type];
-        if($this->config['driver'] == "sqlsrv") {
-            $driver = new Sqlsrv($arguments);
-        } else if($this->config['driver'] == "pgsql") {
-            $driver = new Pgsql($arguments);
-        }else if($this->config['driver'] == "sqlite") {
-            $driver = new Sqlite($arguments);
-        } else {
-            $driver = new Mysql($arguments);
-        }
-
-        return $driver;
-    }
-
-    /**
-     * @param $table
-     * @return mixed
-     */
-    public function findPrimaryKey($table) {
         return $this->driver()->findPrimaryKey($table);
     }
 
-    /**
-     * @param $table
-     * @return bool
-     */
-    public function hasTable($table) {
-        if($exist = get_singleton("hasTable_".$table)) {
-            return $exist;
-        } else {
-            $exist = $this->driver()->hasTable($table);
-            put_singleton("hasTable".$table, $exist);
-            return $exist;
+    public function hasTable(string $table): bool
+    {
+        $cacheKey = "hasTable_" . $table;
+        if ($exist = get_singleton($cacheKey)) {
+            return (bool) $exist;
         }
+
+        $exist = $this->driver()->hasTable($table);
+        put_singleton($cacheKey, $exist);
+        return $exist;
     }
 
-    /**
-     * @param $table
-     * @param $column
-     * @return bool
-     */
-    public function hasColumn($table, $column) {
-        if($exist = get_singleton("hasColumn_".$table."_".$column)) {
-            return $exist;
-        } else {
-            $exist = $this->driver()->hasColumn($table, $column);
-            put_singleton("hasColumn_".$table."_".$column, $exist);
-            return $exist;
+    public function hasColumn(string $table, string $column): bool
+    {
+        $cacheKey = "hasColumn_" . $table . "_" . $column;
+        if ($exist = get_singleton($cacheKey)) {
+            return (bool) $exist;
         }
+
+        $exist = $this->driver()->hasColumn($table, $column);
+        put_singleton($cacheKey, $exist);
+        return $exist;
     }
 
-    /**
-     * @param $table
-     * @return array
-     */
-    public function listColumn($table) {
+    public function listColumn(string $table): array
+    {
         return $this->driver()->listColumn($table);
     }
 
-    /**
-     * @return array
-     */
-    public function listTable() {
+    public function listTable(): array
+    {
         return $this->driver()->listTable();
     }
 
-    /**
-     * @return string
-     */
-    public function getLastQuery()
+    public function getLastQuery(): ?string
     {
         return $this->driver()->getLastQuery();
     }
 
-    /**
-     * @param string|null $table
-     * @return ORM
-     */
-    public function db($table = null) {
-        $this->table = $table;
-        return $this;
-    }
-
-    /**
-     * @param string $table
-     * @return $this
-     */
-    public function from(string $table)
+    public function db(?string $table = null): self
     {
-        $this->table = $table;
+        $this->table = $table ? preg_replace('/[^a-zA-Z0-9_]/', '', $table) : null;
         return $this;
     }
 
-    /**
-     * @param $field
-     * @param mixed ...$moreFields
-     * @return ORM
-     */
-    public function select($field, ...$moreFields) {
-        $arguments = func_get_args();
-        $this->select = implode(",",$arguments);
+    public function select(string ...$fields): self
+    {
+        $this->select = implode(",", $fields);
         return $this;
     }
 
-    /**
-     * @param string $field_name
-     * @return ORM
-     */
-    public function addSelect($field_name) {
-        if($this->select == "*") {
-            $this->select = $field_name;
+    public function addSelect(string $fieldName): self
+    {
+        if ($this->select === "*") {
+            $this->select = $fieldName;
         } else {
-            $this->select .= ",".$field_name;
+            $this->select .= "," . $fieldName;
         }
         return $this;
     }
 
-    /**
-     * @param string $table_name
-     * @param array $column_exception
-     * @param string $join_alias
-     * @return ORM
-     */
-    public function addSelectTable($table_name, $column_exception = [], $join_alias = null)
+    public function addSelectTable(string $tableName, array $columnException = [], ?string $joinAlias = null): self
     {
-        $table_columns = $this->listColumn($table_name);
+        $tableColumns = $this->listColumn($tableName);
         $result = [];
-        foreach($table_columns as $column) {
-            $alias = ($join_alias)?$join_alias:$table_name;
-            if(count($column_exception)) {
-                if(!in_array($column, $column_exception)) {
-                    $result[] = $alias.".".$column." as ".$alias."_".$column;
+        foreach ($tableColumns as $column) {
+            $alias = $joinAlias ?: $tableName;
+            if (count($columnException) > 0) {
+                if (!in_array($column, $columnException, true)) {
+                    $result[] = $alias . "." . $column . " as " . $alias . "_" . $column;
                 }
             } else {
-                $result[] = $alias.".".$column." as ".$alias."_".$column;
+                $result[] = $alias . "." . $column . " as " . $alias . "_" . $column;
             }
         }
-        if($this->select == "*") {
+
+        if ($this->select === "*") {
             $this->select = implode(",", $result);
         } else {
-            $this->select .= ",".implode(",", $result);
+            $this->select .= "," . implode(",", $result);
         }
         return $this;
     }
 
-
-    /**
-     * @param string $join SQL Join Syntax
-     * @param string $join_type SQL Join Type
-     * @return ORM
-     */
-    public function join($join, $join_type = "INNER JOIN") {
+    public function join(string $join, string $joinType = "INNER JOIN"): self
+    {
         $this->join[] = $join;
-        $this->join_type[] = $join_type;
+        $this->join_type[] = $joinType;
         return $this;
     }
 
-    /**
-     * @param $join_sql
-     * @return ORM
-     */
-    public function leftJoin($join_sql) {
-        $this->join[] = $join_sql;
-        $this->join_type[] = "LEFT JOIN";
+    public function leftJoin(string $joinSql): self
+    {
+        return $this->join($joinSql, "LEFT JOIN");
+    }
+
+    public function rightJoin(string $joinSql): self
+    {
+        return $this->join($joinSql, "RIGHT JOIN");
+    }
+
+    public function outerJoin(string $joinSql): self
+    {
+        return $this->join($joinSql, "OUTER JOIN");
+    }
+
+    public function with(string ...$relations): self
+    {
+        $this->with = array_merge($this->with, $relations);
         return $this;
     }
 
-    /**
-     * @param $join_sql
-     * @return ORM
-     */
-    public function rightJoin($join_sql) {
-        $this->join[] = $join_sql;
-        $this->join_type[] = "RIGHT JOIN";
-        return $this;
-    }
-
-    /**
-     * @param $join_sql
-     * @return ORM
-     */
-    public function outerJoin($join_sql) {
-        $this->join[] = $join_sql;
-        $this->join_type[] = "OUTER JOIN";
-        return $this;
-    }
-
-    /**
-     * @param string $table_name
-     * @return ORM
-     */
-    public function with($table_name) {
-        $this->join($table_name." on ".$table_name.".id = ".$table_name."_id");
-        return $this;
-    }
-
-    /**
-     * @param string $where_query SQL where syntax
-     * @return ORM $this
-     */
-    public function where($where_query, array $bind_values = null) {
-        $this->where[] = $where_query;
-        if($bind_values) {
-            if(is_array($bind_values)) {
-                $this->whereBinds = ($this->whereBinds)?array_merge($this->whereBinds, $bind_values) : $bind_values;
-            } else {
-                $this->whereBinds[] = $bind_values;
-            }
+    public function where(string $whereQuery, ?array $bindValues = null): self
+    {
+        $this->where[] = $whereQuery;
+        if ($bindValues !== null) {
+            $this->whereBinds = ($this->whereBinds) ? array_merge($this->whereBinds, $bindValues) : $bindValues;
         }
         return $this;
     }
 
-    /**
-     * @param $field
-     * @return ORM
-     */
-    public function whereNull($field) {
-        $this->where[] = $field." IS NULL";
+    public function whereNull(string $field): self
+    {
+        $this->where[] = $field . " IS NULL";
         return $this;
     }
 
-
-    public function whereDate($field,$value) {
-        return $this->where("DATE(".$field.")=?",[$value]);
-    }
-
-    public function whereYesterday($field) {
-        return $this->where("DATE(".$field.")=DATE_SUB(CURDATE(),INTERVAL 1 DAY)");
-    }
-
-    public function whereLastWeekUntilToday($field) {
-        return $this->where("DATE(".$field.") >= DATE_SUB(CURDATE(),INTERVAL 7 DAY)");
-    }
-
-    /**
-     * @param $field
-     * @return ORM
-     */
-    public function whereNotNull($field) {
-        $this->where[] = $field." IS NOT NULL";
+    public function whereNotNull(string $field): self
+    {
+        $this->where[] = $field . " IS NOT NULL";
         return $this;
     }
 
-    /**
-     * @param $field
-     * @param array $array
-     * @return ORM
-     */
-    public function whereIn($field, array $array) {
-        $array = implode('","',$array);
-        $this->where[] = $field.' IN ("'.$array.'")';
+    public function whereIn(string $field, array $array): self
+    {
+        $placeholders = implode(',', array_fill(0, count($array), '?'));
+        return $this->where($field . " IN ($placeholders)", $array);
+    }
+
+    public function whereNotIn(string $field, array $array): self
+    {
+        $placeholders = implode(',', array_fill(0, count($array), '?'));
+        return $this->where($field . " NOT IN ($placeholders)", $array);
+    }
+
+    public function whereDate(string $field, string $value): self
+    {
+        return $this->where("DATE(" . $field . ")=?", [$value]);
+    }
+
+    public function whereLike(string $field, string $keyword): self
+    {
+        return $this->where($field . " LIKE ?", ["%$keyword%"]);
+    }
+
+    public function orderBy(string $orderBy): self
+    {
+        $this->order_by = $orderBy;
         return $this;
     }
 
-    /**
-     * @param $field
-     * @param array $array
-     * @return ORM
-     */
-    public function whereNotIn($field, array $array) {
-        $array = implode('","',$array);
-        $this->where[] = $field.' NOT IN ("'.$array.'")';
+    public function groupBy(string $groupBy): self
+    {
+        $this->group_by = $groupBy;
         return $this;
     }
 
-
-    /**
-     * @param $var
-     * @param $where_query
-     * @return ORM $this
-     */
-    public function whereIsset($var, $where_query, array $bind_values = null) {
-        if(isset($var) && $var!="") {
-            $this->where[] = $where_query;
-            if($bind_values) {
-                if(is_array($bind_values)) {
-                    $this->whereBinds = ($this->whereBinds)?array_merge($this->whereBinds, $bind_values) : $bind_values;
-                } else {
-                    $this->whereBinds[] = $bind_values;
-                }
-            }
-        }
-        return $this;
-    }
-
-
-    public function whereWhen($var, $where_query, array $bind_values = null) {
-        return $this->whereIsset($var, $where_query, $bind_values);
-    }
-
-    /**
-     * @param $varToTest
-     * @param $field
-     * @param $keyword
-     * @return $this
-     */
-    public function whereLike($varToTest, $field, $keyword) {
-        if(isset($varToTest) && $varToTest!="") {
-            $keyword = htmlentities($keyword);
-            $this->where[] = $field." LIKE '%".$keyword."%'";
-        }
-        return $this;
-    }
-
-    /**
-     * Generate random data
-     * @return $this
-     */
-    public function orderByRandom() {
-        $this->order_by = $this->driver()->orderByRandom();
-        return $this;
-    }
-
-    /**
-     * Order by id latest
-     * @return $this
-     */
-    public function orderByLatest() {
-        return $this->orderBy($this->table.".".$this->findPrimaryKey($this->table)." desc");
-    }
-
-    /**
-     * Generate random data
-     * @return $this
-     */
-    public function random() {
-        $this->order_by = $this->driver()->orderByRandom();
-        return $this;
-    }
-
-    /**
-     * @param string $order_by SQL Order By Syntax
-     * @return ORM $this
-     */
-    public function orderBy($order_by) {
-        $this->order_by = $order_by;
-        return $this;
-    }
-
-    /**
-     * @param string $group_by SQL Group By Syntax
-     * @return ORM $this
-     */
-    public function groupBy($group_by) {
-        $this->group_by = $group_by;
-        return $this;
-    }
-
-    /**
-     * @param string $having SQL Having Syntax
-     * @return ORM
-     */
-    public function having($having) {
+    public function having(string $having): self
+    {
         $this->having = $having;
         return $this;
     }
 
-    /**
-     * @param int $offset
-     * @return ORM
-     */
-    public function offset($offset) {
-        $this->offset = $offset;
-        return $this;
-    }
-
-    /**
-     * @param $limit
-     * @return ORM
-     */
-    public function limit($limit) {
+    public function limit(int $limit): self
+    {
         $this->limit = $limit;
         return $this;
     }
 
-    /**
-     * @param array $array
-     * @return mixed
-     * @throws \Exception
-     */
-    public function update($array) {
+    public function offset(int $offset): self
+    {
+        $this->offset = $offset;
+        return $this;
+    }
+
+    public function raw(string $sql, array $binds = []): mixed
+    {
+        $stmt = $this->connection->prepare($sql);
+        $stmt->execute($binds);
+        return $stmt;
+    }
+
+    public function insert(array $array): string
+    {
+        return $this->driver()->insert($array);
+    }
+
+    public function update(array $array): bool
+    {
         $this->driver()->update($array);
         return true;
     }
 
-    /**
-     * @param array $array
-     * @return mixed
-     * @throws \Exception
-     */
-    public function insert($array) {
-        return $this->driver()->insert($array);
-    }
-
-    /**
-     * @param array $array
-     * @return mixed
-     * @throws \Exception
-     */
-    public function insertBulk(array $array) {
-        return $this->driver()->insertBatch($array);
-    }
-
-    /**
-     * @param int|array|null $id
-     * @return mixed
-     * @throws \Exception
-     */
-    public function delete($id = null) {
+    public function delete($id = null): bool
+    {
         $this->driver()->delete($id);
         return true;
     }
 
-    /**
-     * To find a record
-     * @param null|int $id
-     * @return mixed|array
-     * @throws \Exception
-     */
-    public function find($id = null) {
-        return $this->driver()->find($id);
-    }
-
-    /**
-     * To find a record
-     * @return mixed
-     */
-    public function first()
+    public function find(mixed $id = null): mixed
     {
-        return $this->driver()->find();
-    }
-
-    /**
-     * @param null $limit
-     * @param int $offset
-     * @param false $paging
-     * @return array|false|null
-     * @throws \Exception
-     */
-    public function all($limit = null, $offset = 0, $paging = false) {
-        if($limit) $this->limit = $limit;
-        if($offset) $this->offset = $offset;
-        if($paging) {
-            return $this->paginate($limit);
-        } else {
-            return $this->driver()->all();
+        $cacheKey = $this->getCacheKey("find_" . $id);
+        if ($this->cacheTTL !== null && $cached = get_singleton($cacheKey)) {
+            return $cached;
         }
-    }
 
-    /**
-     * @param null $limit
-     * @param int $offset
-     * @param false $paging
-     * @return array|false|null
-     * @throws \Exception
-     */
-    public function get($limit = null, $offset = 0, $paging = false) {
-        if($paging) {
-            return $this->paginate($limit);
-        } else {
-            return $this->all($limit, $offset);
+        $result = $this->driver()->find($id);
+        if ($result && count($this->with) > 0) {
+            $result = $this->loadRelations([$result])[0];
         }
+
+        if ($this->cacheTTL !== null && $result) {
+            put_singleton($cacheKey, $result);
+        }
+
+        return $result;
     }
 
-    /**
-     * @return int
-     */
-    public function count() {
-        return (int) $this->driver()->count();
+    public function first(): mixed
+    {
+        return $this->find();
     }
 
-    /**
-     * @param $field
-     * @return int
-     */
-    public function sum($field) {
-        return (int) $this->driver()->sum($field);
+    public function all(?int $limit = null, int $offset = 0): array
+    {
+        if ($limit !== null) {
+            $this->limit = $limit;
+        }
+        $this->offset = $offset;
+
+        $cacheKey = $this->getCacheKey("all_" . $limit . "_" . $offset);
+        if ($this->cacheTTL !== null && $cached = get_singleton($cacheKey)) {
+            return $cached;
+        }
+
+        $results = $this->driver()->all();
+        if (count($results) > 0 && count($this->with) > 0) {
+            $results = $this->loadRelations($results);
+        }
+
+        if ($this->cacheTTL !== null && count($results) > 0) {
+            put_singleton($cacheKey, $results);
+        }
+
+        return $results;
     }
 
-    /**
-     * @param $field
-     * @return int
-     */
-    public function max($field) {
+    private function getCacheKey(string $suffix): string
+    {
+        $query = $this->driver()->queryBuilder();
+        return "orm_cache_" . md5($query . serialize($this->whereBinds) . $suffix);
+    }
+
+    public function get(?int $limit = null, int $offset = 0): array
+    {
+        return $this->all($limit, $offset);
+    }
+
+    public function count(): int
+    {
+        return $this->driver()->count();
+    }
+
+    public function sum(string $field): float
+    {
+        return $this->driver()->sum($field);
+    }
+
+    public function max(string $field): mixed
+    {
         return $this->driver()->max($field);
     }
 
-    /**
-     * @param $field
-     * @return int
-     */
-    public function min($field) {
+    public function min(string $field): mixed
+    {
         return $this->driver()->min($field);
     }
 
-    /**
-     * @param $field
-     * @return int
-     */
-    public function avg($field) {
+    public function avg(string $field): float
+    {
         return $this->driver()->avg($field);
     }
 
-    /**
-     * @param $limit
-     * @return array|null
-     * @throws \Exception
-     */
-    public function paginate($limit) {
-        $this->limit($limit);
-        $query = $this->driver()->paginate();
+    private function loadRelations(array $results): array
+    {
+        // Simple eager loading implementation
+        foreach ($this->with as $relation) {
+            $foreignKey = $relation . "_id";
+            $ids = array_unique(array_column($results, $foreignKey));
+            if (count($ids) === 0) {
+                continue;
+            }
 
-        // Generate Pagination
-        $page = request_int('page', 1);
-        $query['links'] = $this->paginationHTML($page, $query['total'], $limit);
+            $relatedData = (new self($this->connection))
+                ->db($relation)
+                ->whereIn('id', $ids)
+                ->all();
 
-        return $query;
+            $indexedRelated = [];
+            foreach ($relatedData as $row) {
+                $indexedRelated[$row['id']] = $row;
+            }
+
+            foreach ($results as &$result) {
+                $result[$relation] = $indexedRelated[$result[$foreignKey]] ?? null;
+            }
+        }
+        return $results;
     }
 
-    private function paginationHTML($page, $total, $limit) {
+    public function paginate(int $limit): array
+    {
+        $this->limit($limit);
+        $data = $this->driver()->paginate();
+        $page = request_int('page', 1);
+        $data['links'] = $this->paginationHTML($page, $data['total'], $limit);
+        $data['last_page'] = (int) ceil($data['total'] / $limit);
+
+        if (count($data['data']) > 0 && count($this->with) > 0) {
+            $data['data'] = $this->loadRelations($data['data']);
+        }
+
+        return $data;
+    }
+
+    private function paginationHTML(int $page, int $total, int $limit): string
+    {
+        $totalPages = (int) ceil($total / $limit);
         $result = "<ul class='pagination'>";
-        if($page==1) {
-            $result .= "<li class=\"disabled\"><a href=\"#\">First</a></li>
-                <li class=\"disabled\"><a href=\"#\">&laquo;</a></li>";
+
+        // First & Prev
+        if ($page === 1) {
+            $result .= "<li class='disabled'><a href='#'>First</a></li><li class='disabled'><a href='#'>&laquo;</a></li>";
         } else {
-            $link_prev = ($page > 1) ? $page - 1 : 1;
-            $result .= "<li><a href=\"".get_current_url(['page'=>1])."\">First</a></li>
-                <li><a href=\"".get_current_url(['page'=>$link_prev])."\">&laquo;</a></li>";
+            $result .= "<li><a href='" . get_current_url(['page' => 1]) . "'>First</a></li>";
+            $result .= "<li><a href='" . get_current_url(['page' => $page - 1]) . "'>&laquo;</a></li>";
         }
 
-        // Generate link number
-        $total_page = ceil($total / $limit);
-        $total_number = 3;
-        $start_number = ($page > $total_number) ? $page - $total_number : 1;
-        $end_number = ($page < ($total_page - $total_number)) ? $page + $total_number : $total_page;
+        // Numbers
+        $range = 3;
+        $start = max(1, $page - $range);
+        $end = min($totalPages, $page + $range);
 
-        for ($i = $start_number; $i <= $end_number; $i++) {
-            $link_active = ($page == $i) ? 'class="active"' : '';
-            $result .= "<li $link_active ><a href='".get_current_url(['page'=>$i])."'>".$i."</a></li>";
+        for ($i = $start; $i <= $end; $i++) {
+            $active = ($page === $i) ? "class='active'" : "";
+            $result .= "<li $active><a href='" . get_current_url(['page' => $i]) . "'>$i</a></li>";
         }
 
-        // Generate next and last
-        if ($page == $total_page) {
-            $result .= "<li class='disabled'><a href='#'>&raquo;</a></li>";
-            $result .= "<li class='disabled'><a href='#'>Last</a></li>";
+        // Next & Last
+        if ($page === $totalPages || $totalPages === 0) {
+            $result .= "<li class='disabled'><a href='#'>&raquo;</a></li><li class='disabled'><a href='#'>Last</a></li>";
         } else {
-            $link_next = ($page < $total_page) ? $page + 1 : $total_page;
-            $result .= "<li><a href='".get_current_url(['page'=>$link_next])."'>&raquo;</a></li>";
-            $result .= "<li><a href='".get_current_url(['page'=>$total_page])."'>Last</a></li>";
+            $result .= "<li><a href='" . get_current_url(['page' => $page + 1]) . "'>&raquo;</a></li>";
+            $result .= "<li><a href='" . get_current_url(['page' => $totalPages]) . "'>Last</a></li>";
         }
 
         $result .= "</ul>";
-
         return $result;
     }
 }

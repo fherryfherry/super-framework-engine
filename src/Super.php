@@ -3,29 +3,32 @@
 namespace SuperFrameworkEngine;
 
 use Dotenv\Dotenv;
+use Jenssegers\Blade\Blade;
+use SuperFrameworkEngine\Foundation\Container;
 use SuperFrameworkEngine\Foundation\ResponseBuilder;
+use Throwable;
 
 class Super
 {
     use ResponseBuilder;
 
-    private $config;
-    private $bootstrapCache;
+    private array $config;
+    private array $bootstrapCache;
+    private Container $container;
 
     public function __construct()
     {
         /**
          * Disable display error because we want to replace it with our display error page
          */
-        ini_set("display_errors", 0);
-        ini_set("display_startup_errors", 0);
-        ini_set("error_log", base_path("error.log"));
+        ini_set("display_errors", "0");
+        ini_set("display_startup_errors", "0");
+        ini_set("error_log", (string) base_path("error.log"));
 
         /**
          * Activate ENV functionality
          */
         Dotenv::createImmutable(base_path())->load();
-
 
         /**
          * Load configuration and bootstrap cache
@@ -37,78 +40,88 @@ class Super
          * Set default timezone
          */
         date_default_timezone_set($this->config["timezone"] ?: "UTC");
+
+        $this->container = Container::getInstance();
+        $this->registerCoreBindings();
     }
 
-    private function loadHelpers() {
-        foreach($this->bootstrapCache['helper'] as $helper) require_once base_path(lcfirst(str_replace("\\",DIRECTORY_SEPARATOR,$helper['path'])).".php");
+    private function registerCoreBindings(): void
+    {
+        $this->container->singleton(Super::class, $this);
+        $this->container->singleton('config', fn() => $this->config);
     }
 
-    private function middleware(callable $content) {
+    private function loadHelpers(): void
+    {
+        foreach ($this->bootstrapCache['helper'] as $helper) {
+            require_once base_path(lcfirst(str_replace("\\", DIRECTORY_SEPARATOR, $helper['path'])) . ".php");
+        }
+    }
+
+    private function middleware(callable $content): mixed
+    {
         $response = $content;
         $middleware = $this->bootstrapCache['middleware'];
-        if(count($middleware)) {
-            foreach($middleware as $mid) {
-                $response = (new $mid['class'])->handle(function() use ($response) {
-                    return $response;
-                });
+
+        if (count($middleware) > 0) {
+            foreach ($middleware as $mid) {
+                $instance = $this->container->make($mid['class']);
+                $response = fn() => $instance->handle(fn() => $response());
             }
         }
-        return call_user_func($response);
+
+        return $response();
     }
 
-    private function boot() {
+    private function boot(): void
+    {
         $boot = $this->bootstrapCache['boot'];
-        if(count($boot)) {
-            foreach($boot as $b) {
-                (new $b['class'])->run();
+        if (count($boot) > 0) {
+            foreach ($boot as $b) {
+                $instance = $this->container->make($b['class']);
+                $instance->run();
             }
         }
     }
 
-    private function responseCode(int $code) {
-        return in_array($code,[200,400,401,404,403,500]) ? $code : 500;
+    private function responseCode(int $code): int
+    {
+        return in_array($code, [200, 400, 401, 404, 403, 500]) ? $code : 500;
     }
 
-    public function run() {
+    public function run(): void
+    {
         try {
-            $response = null;
-
             $this->loadHelpers();
-
             $this->boot();
 
-            $response = $this->middleware(function () {
-                return $this->responseBuilder();
-            });
+            $response = $this->middleware(fn() => $this->responseBuilder());
 
             echo $response;
-
-        } catch (\Throwable $e) {
-            $code = $this->responseCode(intval($e->getCode()));
+        } catch (Throwable $e) {
+            $code = $this->responseCode((int) $e->getCode());
             http_response_code($code);
 
-            if($this->config['logging_errors'] == "true") {
+            if (($this->config['logging_errors'] ?? 'false') === "true") {
                 logging($e);
             }
 
-            if($this->config['display_errors'] == "true") {
+            if (($this->config['display_errors'] ?? 'false') === "true") {
                 echo $e;
             } else {
-                $blade = new \Jenssegers\Blade\Blade(__DIR__."/Views",base_path("bootstrap/views"));
-                switch ($e->getCode()) {
-                    default:
-                    case "500":
-                        echo $blade->make("error.500")->render();
-                        break;
-                    case "404":
-                        echo $blade->make("error.404")->render();
-                        break;
-                    case "405":
-                        echo $blade->make("error.405")->render();
-                        break;
-                }
+                $this->renderErrorPage($e);
             }
         }
     }
 
+    private function renderErrorPage(Throwable $e): void
+    {
+        $blade = new Blade(__DIR__ . "/Views", base_path("bootstrap/views"));
+        $view = match ((string) $e->getCode()) {
+            "404" => "error.404",
+            "405" => "error.405",
+            default => "error.500",
+        };
+        echo $blade->make($view)->render();
+    }
 }

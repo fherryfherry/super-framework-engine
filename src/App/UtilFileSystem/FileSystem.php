@@ -18,7 +18,14 @@ class FileSystem
      * @throws \Exception
      */
     public static function uploadImageByUrl($url, $newFileName) {
+        $urlParts = parse_url($url);
+        if(!isset($urlParts['scheme']) || !in_array($urlParts['scheme'], ['http', 'https'])) {
+            throw new \InvalidArgumentException("The url protocol is invalid!");
+        }
+
         if(filter_var($url, FILTER_VALIDATE_URL)) {
+            $newFileName = self::sanitizeFilename($newFileName);
+            
             if(!file_exists(public_path("uploads"))) {
                 mkdir(public_path("uploads"));
             }
@@ -52,6 +59,9 @@ class FileSystem
      * @throws \Exception
      */
     public static function uploadBase64(string $base64Data, string $newFileName, string $extension) {
+        $newFileName = self::sanitizeFilename($newFileName);
+        $extension = self::sanitizeFilename($extension);
+
         if(!file_exists(public_path("uploads"))) {
             mkdir(public_path("uploads"));
         }
@@ -67,6 +77,11 @@ class FileSystem
         }
     }
 
+    private static function sanitizeFilename($filename): string
+    {
+        return preg_replace('/[^a-zA-Z0-9_\-]/', '', $filename);
+    }
+
     /**
      * @param $inputName
      * @param $newFileName
@@ -74,6 +89,7 @@ class FileSystem
      * @throws \Exception
      */
     public static function uploadImage($inputName, $newFileName, $resizeToWidth = null, $resizeToHeight=null) {
+        $newFileName = self::sanitizeFilename($newFileName);
         if(isset($_FILES[$inputName]["tmp_name"])) {
             if(!file_exists(public_path("uploads"))) {
                 mkdir(public_path("uploads"));
@@ -121,6 +137,7 @@ class FileSystem
      * @throws \Exception
      */
     public static function uploadFile($inputName, $newFileName) {
+        $newFileName = self::sanitizeFilename($newFileName);
         if(isset($_FILES[$inputName]["tmp_name"])) {
             if(!file_exists(public_path("uploads"))) {
                 mkdir(public_path("uploads"));

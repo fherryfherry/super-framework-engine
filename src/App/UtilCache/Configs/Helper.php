@@ -40,14 +40,14 @@ if(!function_exists("cache")) {
     function cache($key, $value = null, $tag = "general", $minutes = 60) {
         if(is_array($key)) {
             foreach($key as $k=>$v) {
-                file_put_contents(base_path("bootstrap/cache/".md5($tag).".".md5($k)), serialize([
+                file_put_contents(base_path("bootstrap/cache/".md5($tag).".".md5($k)), json_encode([
                     "expired"=>strtotime("+".$minutes." minutes"),
-                    "content"=>$value
+                    "content"=>$v
                 ]));
             }
         } else {
             if($value) {
-                file_put_contents(base_path("bootstrap/cache/".md5($tag).".".md5($key)), serialize([
+                file_put_contents(base_path("bootstrap/cache/".md5($tag).".".md5($key)), json_encode([
                     "expired"=>strtotime("+".$minutes." minutes"),
                     "content"=>$value
                 ]));
@@ -56,7 +56,7 @@ if(!function_exists("cache")) {
                 $key = md5($key);
                 if(file_exists(base_path("bootstrap/cache/".$tag.".".$key))) {
                     $cache = file_get_contents(base_path("bootstrap/cache/".$tag.".".$key));
-                    $cache = unserialize($cache);
+                    $cache = json_decode($cache, true);
                     if($cache['expired'] > time()) {
                         return $cache['content'];
                     } else {

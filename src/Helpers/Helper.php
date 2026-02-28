@@ -1,226 +1,238 @@
 <?php
 
-if(!function_exists('simple_collect')) {
+use SuperFrameworkEngine\Foundation\Container;
+use SuperFrameworkEngine\Helpers\Collection;
+
+if (!function_exists('simple_collect')) {
     /**
      * @param array $dataArray
-     * @return \SuperFrameworkEngine\Helpers\Collection
+     * @return Collection
      */
-    function simple_collect(array $dataArray)
+    function simple_collect(array $dataArray): Collection
     {
-        return (new \SuperFrameworkEngine\Helpers\Collection($dataArray));
+        return new Collection($dataArray);
     }
 }
 
-if(!function_exists('array_unique_multi')) {
-    function array_unique_multi(array $array, string $key) {
+if (!function_exists('array_unique_multi')) {
+    /**
+     * @param array $array
+     * @param string $key
+     * @return array
+     */
+    function array_unique_multi(array $array, string $key): array
+    {
         $temp = array_unique(array_column($array, $key));
         return array_intersect_key($array, $temp);
     }
 }
 
-$singleton_data = [];
-if(!function_exists("put_singleton")) {
-    function put_singleton($key, $value) {
-        global $singleton_data;
-        if(extension_loaded('apcu')) {
-            @apcu_add($key, $value, 5);
+if (!function_exists("put_singleton")) {
+    /**
+     * @param string $key
+     * @param mixed $value
+     * @return void
+     */
+    function put_singleton(string $key, mixed $value): void
+    {
+        if (extension_loaded('apcu')) {
+            apcu_add($key, $value, 5);
         } else {
-            $singleton_data[$key] = $value;
+            Container::getInstance()->singleton($key, fn() => $value);
         }
     }
 }
 
-if(!function_exists("get_singleton")) {
-    function get_singleton($key) {
-        global $singleton_data;
-        if(extension_loaded('apc')) {
-            return @apcu_fetch($key);
-        } else {
-            return @$singleton_data[$key];
-        }
-    }
-}
-
-
-if(!function_exists("url")) {
+if (!function_exists("get_singleton")) {
     /**
-     * @param null $path
-     * @return string
-     */
-    function url($path = null) {
-        return base_url($path);
-    }
-}
-
-if(!function_exists("asset")) {
-    /**
-     * @param null $path
-     * @return string
-     */
-    function asset($path = null) {
-        return base_url($path);
-    }
-}
-
-
-if(!function_exists("redirect_back")) {
-    /**
-     * @param array $with_session_data
-     */
-    function redirect_back($with_session_data = []) {
-        if($with_session_data) {
-            session_flash($with_session_data);
-        }
-
-        header("location: ".$_SERVER['HTTP_REFERER'], false, 301);
-        return false;
-        exit;
-    }
-}
-
-if(!function_exists("redirect")) {
-    /**
-     * @param $path
-     * @param array $with_session_data
-     */
-    function redirect($path, $with_session_data = []) {
-        if($with_session_data) {
-            session_flash($with_session_data);
-        }
-
-        $url = strpos($path,'http')!==false?$path:base_url($path);
-        header("location: ".$url, false, 301);
-        return false;
-        exit;
-    }
-}
-
-if(!function_exists("logging")) {
-    /**
-     * @param $content
-     * @param string $type
-     */
-    function logging($content, string $type = "error") {
-        file_put_contents(base_path("/logs/".date("Y-m-d").".log"), "[".date("Y-m-d H:i:s")."][".$type."] - ".$content."\n\n", FILE_APPEND);
-    }
-}
-
-if(!function_exists("var_min_export")) {
-    /**
-     * @param $expression
-     * @param bool $return
-     * @return mixed|null|string|string[]
-     */
-    function var_min_export($expression, $return=FALSE) {
-        $export = var_export($expression, TRUE);
-        $export = preg_replace("/^([ ]*)(.*)/m", '$1$1$2', $export);
-        $array = preg_split("/\r\n|\n|\r/", $export);
-        $array = preg_replace(["/\s*array\s\($/", "/\)(,)?$/", "/\s=>\s$/"], [NULL, ']$1', ' => ['], $array);
-        $export = join(PHP_EOL, array_filter(["["] + $array));
-        $export = preg_replace("/[0-9]+ \=\>/i", '', $export);
-        if ($return) return $export; else echo $export;
-    }
-}
-
-if(!function_exists("config")) {
-    /**
-     * @param $name
-     * @param null $default
+     * @param string $key
      * @return mixed
      */
-    function config($name, $default = null) {
-        $name = strpos($name,".")!==false?$name:"default.".$name;
-        $split_name = explode(".", $name);
-        if($config_data = get_singleton("config_".$split_name[0])) {
-            return $config_data[$split_name[1]];
-        } else {
-            try {
-                if($split_name[0] == "default") {
-                    $config_data = include base_path("configs/App.php");
-                } else {
-                    $config_data = include base_path("app/Modules/".$split_name[0]."/Configs/App.php");
-                }
-                put_singleton("config_".$split_name[0], $config_data);
-                $key = $split_name[1];
-                return $config_data[$key] ?? $default;
-            } catch (Exception $e) {
-                return $default;
-            }
+    function get_singleton(string $key): mixed
+    {
+        if (extension_loaded('apcu')) {
+            return apcu_fetch($key);
+        }
+
+        try {
+            return Container::getInstance()->make($key);
+        } catch (Exception) {
+            return null;
         }
     }
 }
 
-if(!function_exists("public_path")) {
+if (!function_exists("url")) {
     /**
-     * @param null $path
+     * @param string|null $path
      * @return string
      */
-    function public_path($path = null) {
-        return BASE_PATH."/public/".$path;
+    function url(?string $path = null): string
+    {
+        return base_url($path);
     }
 }
 
-if(!function_exists("base_path")) {
+if (!function_exists("asset")) {
     /**
-     * @param null $path
+     * @param string|null $path
      * @return string
      */
-    function base_path($path = null) {
-        return BASE_PATH.DIRECTORY_SEPARATOR.$path;
+    function asset(?string $path = null): string
+    {
+        return base_url($path);
     }
 }
 
-if(!function_exists('base_path_uri')) {
-    function base_path_uri($path = null) {
+if (!function_exists("redirect_back")) {
+    /**
+     * @param array $with_session_data
+     * @return never
+     */
+    function redirect_back(array $with_session_data = []): never
+    {
+        if ($with_session_data) {
+            session_flash($with_session_data);
+        }
+
+        header("location: " . $_SERVER['HTTP_REFERER'], false, 301);
+        exit;
+    }
+}
+
+if (!function_exists("redirect")) {
+    /**
+     * @param string $path
+     * @param array $with_session_data
+     * @return never
+     */
+    function redirect(string $path, array $with_session_data = []): never
+    {
+        if ($with_session_data) {
+            session_flash($with_session_data);
+        }
+
+        $url = str_contains($path, 'http') ? $path : base_url($path);
+        header("location: " . $url, false, 301);
+        exit;
+    }
+}
+
+if (!function_exists("logging")) {
+    /**
+     * @param mixed $content
+     * @param string $type
+     * @return void
+     */
+    function logging(mixed $content, string $type = "error"): void
+    {
+        file_put_contents((string) base_path("/logs/" . date("Y-m-d") . ".log"), "[" . date("Y-m-d H:i:s") . "][" . $type . "] - " . $content . "\n\n", FILE_APPEND);
+    }
+}
+
+if (!function_exists("config")) {
+    /**
+     * @param string $name
+     * @param mixed $default
+     * @return mixed
+     */
+    function config(string $name, mixed $default = null): mixed
+    {
+        $name = str_contains($name, ".") ? $name : "default." . $name;
+        $split_name = explode(".", $name);
+        $singleton_key = "config_" . $split_name[0];
+
+        if ($config_data = get_singleton($singleton_key)) {
+            return $config_data[$split_name[1]] ?? $default;
+        }
+
+        try {
+            if ($split_name[0] === "default") {
+                $config_data = include base_path("configs/App.php");
+            } else {
+                $config_data = include base_path("app/Modules/" . $split_name[0] . "/Configs/App.php");
+            }
+            put_singleton($singleton_key, $config_data);
+            return $config_data[$split_name[1]] ?? $default;
+        } catch (Exception) {
+            return $default;
+        }
+    }
+}
+
+if (!function_exists("public_path")) {
+    /**
+     * @param string|null $path
+     * @return string
+     */
+    function public_path(?string $path = null): string
+    {
+        return BASE_PATH . "/public/" . $path;
+    }
+}
+
+if (!function_exists("base_path")) {
+    /**
+     * @param string|null $path
+     * @return string
+     */
+    function base_path(?string $path = null): string
+    {
+        return BASE_PATH . DIRECTORY_SEPARATOR . $path;
+    }
+}
+
+if (!function_exists('base_path_uri')) {
+    /**
+     * @param string|null $path
+     * @return string
+     */
+    function base_path_uri(?string $path = null): string
+    {
         $tmpURL = BASE_DIR;
-
-        $tmpURL = str_replace(chr(92),'/',$tmpURL);
-
-        $tmpURL = str_replace($_SERVER['DOCUMENT_ROOT'],'',$tmpURL);
-
-        $tmpURL = ltrim($tmpURL,'/');
+        $tmpURL = str_replace(chr(92), '/', $tmpURL);
+        $tmpURL = str_replace($_SERVER['DOCUMENT_ROOT'], '', $tmpURL);
+        $tmpURL = ltrim($tmpURL, '/');
         $tmpURL = rtrim($tmpURL, '/');
 
-        return ($path)?$tmpURL."/".$path:$tmpURL;
+        return $path ? $tmpURL . "/" . $path : $tmpURL;
     }
 }
 
-if(!function_exists("base_url")) {
+if (!function_exists("base_url")) {
     /**
-     * @param null $path
-     * @param null $default
+     * @param string|null $path
+     * @param string|null $default
      * @return string
      */
-    function base_url($path = null, $default = null) {
-        $base_url = (isset($_SERVER['HTTPS']) &&
-        $_SERVER['HTTPS']!='off') ? 'https://' : 'http://';
+    function base_url(?string $path = null, ?string $default = null): string
+    {
+        $base_url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https://' : 'http://';
 
         $tmpURL = BASE_DIR;
-
-        $tmpURL = str_replace(chr(92),'/',$tmpURL);
-
-        $tmpURL = str_replace($_SERVER['DOCUMENT_ROOT'],'',$tmpURL);
-
-        $tmpURL = ltrim($tmpURL,'/');
+        $tmpURL = str_replace(chr(92), '/', $tmpURL);
+        $tmpURL = str_replace($_SERVER['DOCUMENT_ROOT'], '', $tmpURL);
+        $tmpURL = ltrim($tmpURL, '/');
         $tmpURL = rtrim($tmpURL, '/');
 
         if ($tmpURL !== $_SERVER['HTTP_HOST']) {
-            $base_url .= ($tmpURL) ? $_SERVER['HTTP_HOST'].'/'.$tmpURL.'/' : $_SERVER['HTTP_HOST'].'/';
+            $base_url .= ($tmpURL) ? $_SERVER['HTTP_HOST'] . '/' . $tmpURL . '/' : $_SERVER['HTTP_HOST'] . '/';
         } else {
-            $base_url .= $tmpURL.'/';
+            $base_url .= $tmpURL . '/';
         }
 
-        return ($path)?$base_url.$path:$base_url.$default;
+        return $path ? $base_url . $path : $base_url . ($default ?? '');
     }
 }
 
-if(!function_exists("dd")) {
+if (!function_exists("dd")) {
     /**
-     * @param $array
+     * @param mixed ...$args
+     * @return never
      */
-    function dd($array) {
-        $arguments = func_get_args();
-        foreach($arguments as $arg) {
+    function dd(mixed ...$args): never
+    {
+        foreach ($args as $arg) {
             echo "<pre><code>";
             print_r($arg);
             echo "</code></pre>";
@@ -229,20 +241,21 @@ if(!function_exists("dd")) {
     }
 }
 
-if(!function_exists("get_current_url")) {
+if (!function_exists("get_current_url")) {
     /**
-     * @param array|null $param
-     * @param boolean $with_query
+     * @param array $param
+     * @param bool $with_query
      * @return string
      */
-    function get_current_url($param = [], $with_query = true) {
+    function get_current_url(array $param = [], bool $with_query = true): string
+    {
         $url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
-        $url = strtok($url,"?");
+        $url = (string) strtok($url, "?");
 
-        if($with_query) {
+        if ($with_query) {
             $param_array = array_merge($_GET, $param);
             $param_string = http_build_query($param_array);
-            $param_string = ($param_string)?"?".$param_string:"";
+            $param_string = ($param_string) ? "?" . $param_string : "";
             $url .= $param_string;
         }
 

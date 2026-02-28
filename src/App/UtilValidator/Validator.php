@@ -39,7 +39,7 @@ class Validator
                         if(substr($r, 0, 6) == "unique") {
                             $tableUnique = substr($r, 7);
                             if($tableUnique) {
-                                if(DB($tableUnique)->where("{$key} = '{$value}'")->count()) {
+                                if(DB($tableUnique)->where("{$key} = ?", [$value])->count()) {
                                     throw new ValidatorException("Data {$key} '{$value}' has already exists!");
                                 }
                             } else {
@@ -57,7 +57,7 @@ class Validator
                                     $tableExist = $exist[0];
                                     $columnExist = "id";
                                 }
-                                if(!db($tableExist)->where("{$columnExist} = '{$value}'")->count()) {
+                                if(!db($tableExist)->where("{$columnExist} = ?", [$value])->count()) {
                                     throw new ValidatorException("Data for `{$key}` is not exists!");
                                 }
                             } else {

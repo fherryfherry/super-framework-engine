@@ -1,10 +1,15 @@
 <?php
 
-namespace SuperFrameworkEngine\App\UtilORM\Drivers;
+declare(strict_types=1);
 
-use Exception;
+namespace SuperFrameworkEngine\App\UtilORM\Drivers;
 
 class Mysql extends Driver
 {
-    // As Is
+    public function __construct(array $arguments)
+    {
+        parent::__construct($arguments);
+        $this->randomFuncTemplate = "RAND()";
+        $this->pdoQueryTemplate = "mysql:host={host};dbname={database}";
+    }
 }

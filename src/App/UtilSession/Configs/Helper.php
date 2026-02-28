@@ -22,7 +22,7 @@ if(!function_exists('csrf_token')) {
         if($exist = session('csrf_token')) {
             return $exist;
         } else {
-            $token = md5(time());
+            $token = bin2hex(random_bytes(32));
             session(['csrf_token'=>$token]);
             return $token;
         }
@@ -36,6 +36,9 @@ if(!function_exists("session")) {
      * @return mixed
      */
     function session($data) {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
         if(is_array($data)) {
             foreach($data as $key=>$value) {
                 $_SESSION[$key] = $value;
