@@ -155,13 +155,14 @@ class ORMTest extends TestCase
 
         // Test whereIsset
         $this->orm->insert(['name' => 'John', 'email' => 'john@example.com']);
-        $res = (new ORM($this->pdo))->db('users')->whereIsset('name', 'John')->first();
+        $res = (new ORM($this->pdo))->db('users')->whereIsset('John', 'name = ?', ['John'])->first();
         $this->assertEquals('John', $res['name']);
         
-        $res = (new ORM($this->pdo))->db('users')->whereIsset('name', null)->where('email = ?', ['john@example.com'])->first();
+        // Negative cases: should not add the where clause
+        $res = (new ORM($this->pdo))->db('users')->whereIsset(null, 'name = ?', ['John'])->where('email = ?', ['john@example.com'])->first();
         $this->assertEquals('John', $res['name']);
 
-        $res = (new ORM($this->pdo))->db('users')->whereIsset('name', '')->where('email = ?', ['john@example.com'])->first();
+        $res = (new ORM($this->pdo))->db('users')->whereIsset('', 'name = ?', ['John'])->where('email = ?', ['john@example.com'])->first();
         $this->assertEquals('John', $res['name']);
     }
 

@@ -265,10 +265,10 @@ class ORM
         return $this->where($field . " LIKE ?", ["%$keyword%"]);
     }
 
-    public function whereIsset(string $field, mixed $value): self
+    public function whereIsset(mixed $value, string $whereQuery, ?array $bindValues = null): self
     {
         if ($value !== null && $value !== "") {
-            return $this->where($field . " = ?", [$value]);
+            return $this->where($whereQuery, $bindValues);
         }
         return $this;
     }
