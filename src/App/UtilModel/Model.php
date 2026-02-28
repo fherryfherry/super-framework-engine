@@ -118,7 +118,7 @@ abstract class Model implements ArrayAccess
 
     public static function findById(mixed $id): ?static
     {
-        if (!$id) {
+        if ($id === null || $id === "") {
             return null;
         }
 

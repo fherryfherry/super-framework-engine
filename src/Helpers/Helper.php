@@ -8,7 +8,7 @@ if (!function_exists('simple_collect')) {
      * @param array $dataArray
      * @return Collection
      */
-    function simple_collect(array $dataArray): Collection
+    function simple_collect(array $dataArray = []): Collection
     {
         return new Collection($dataArray);
     }
@@ -20,8 +20,11 @@ if (!function_exists('array_unique_multi')) {
      * @param string $key
      * @return array
      */
-    function array_unique_multi(array $array, string $key): array
+    function array_unique_multi(?array $array, string $key): array
     {
+        if (!$array) {
+            return [];
+        }
         $temp = array_unique(array_column($array, $key));
         return array_intersect_key($array, $temp);
     }
@@ -89,7 +92,7 @@ if (!function_exists("redirect_back")) {
      * @param array $with_session_data
      * @return never
      */
-    function redirect_back(array $with_session_data = []): never
+    function redirect_back(?array $with_session_data = []): never
     {
         if ($with_session_data) {
             session_flash($with_session_data);
@@ -106,7 +109,7 @@ if (!function_exists("redirect")) {
      * @param array $with_session_data
      * @return never
      */
-    function redirect(string $path, array $with_session_data = []): never
+    function redirect(string $path, ?array $with_session_data = []): never
     {
         if ($with_session_data) {
             session_flash($with_session_data);
@@ -278,8 +281,9 @@ if (!function_exists("get_current_url")) {
      * @param bool $with_query
      * @return string
      */
-    function get_current_url(array $param = [], bool $with_query = true): string
+    function get_current_url(?array $param = [], bool $with_query = true): string
     {
+        $param = $param ?? [];
         $url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
         $url = (string) strtok($url, "?");
 

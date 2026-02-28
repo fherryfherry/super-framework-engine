@@ -15,6 +15,9 @@ class Validator
      */
     public static function make($data, $rules): void
     {
+        if (!$data || !$rules) {
+            return;
+        }
         foreach($data as $key => $value) {
             foreach($rules as $field => $rule) {
                 if($key == $field) {

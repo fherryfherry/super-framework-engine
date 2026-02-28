@@ -13,7 +13,7 @@ if (!function_exists("request_url_is")) {
     function request_url_is(array|string $path_param): bool
     {
         $paths = is_array($path_param) ? $path_param : [$path_param];
-        $currentURL = get_current_url(null, false);
+        $currentURL = get_current_url([], false);
         $currentURL = parse_url($currentURL)['path'] ?? '';
         $currentURL = ltrim($currentURL, '/');
 

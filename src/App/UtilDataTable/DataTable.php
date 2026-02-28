@@ -36,26 +36,28 @@ class DataTable
             $result = call_user_func($this->query, $result);
         }
 
-        if($search = request('search')['value']) {
-            if($this->searchable_columns) {
-                $likes = [];
-                $binds = [];
-                foreach($this->searchable_columns as $column) {
-                    $likes[] = $column." LIKE ?";
-                    $binds[] = "%".$search."%";
+        if($search_request = request('search')) {
+            if($search = $search_request['value'] ?? null) {
+                if($this->searchable_columns) {
+                    $likes = [];
+                    $binds = [];
+                    foreach($this->searchable_columns as $column) {
+                        $likes[] = $column." LIKE ?";
+                        $binds[] = "%".$search."%";
+                    }
+                    $result->where("(".implode(" OR ",$likes).")", $binds);
                 }
-                $result->where("(".implode(" OR ",$likes).")", $binds);
             }
         }
 
-        if(request('order')) {
-            $order_column_idx = (int) request('order')[0]['column'];
-            $order_column = request('columns')[$order_column_idx]['data'];
-            $order_column_dir = request('order')[0]['dir'];
+        if($order_request = request('order')) {
+            $order_column_idx = (int) $order_request[0]['column'];
+            $order_column = request('columns')[$order_column_idx]['data'] ?? null;
+            $order_column_dir = $order_request[0]['dir'] ?? 'desc';
             
             // Security: Whitelist order direction and sanitize column name
             $order_column_dir = in_array(strtolower($order_column_dir), ['asc', 'desc']) ? $order_column_dir : 'desc';
-            $order_column = preg_replace('/[^a-zA-Z0-9_\.]/', '', $order_column);
+            $order_column = $order_column ? preg_replace('/[^a-zA-Z0-9_\.]/', '', $order_column) : null;
             
             if($order_column) {
                 $result->orderBy($order_column." ".$order_column_dir);
@@ -65,11 +67,11 @@ class DataTable
             $order_column_dir = "desc";
             $result->orderBy($order_column." ".$order_column_dir);
         }
-        $result->offset(request_int('start'));
-        $result->limit(request_int('length'));
+        $result->offset(request_int('start', 0));
+        $result->limit(request_int('length', 10));
         $data = $result->all();
 
-        $no_start = request_int('start');
+        $no_start = request_int('start', 0);
         foreach($data as &$item) {
             $no_start++;
             $item['_number'] = $no_start;
@@ -86,22 +88,24 @@ class DataTable
             $result = call_user_func($this->query, $result);
         }
 
-        if($search = request('search')['value']) {
-            if($this->searchable_columns) {
-                $likes = [];
-                $binds = [];
-                foreach($this->searchable_columns as $column) {
-                    $likes[] = $column." LIKE ?";
-                    $binds[] = "%".$search."%";
+        if($search_request = request('search')) {
+            if($search = $search_request['value'] ?? null) {
+                if($this->searchable_columns) {
+                    $likes = [];
+                    $binds = [];
+                    foreach($this->searchable_columns as $column) {
+                        $likes[] = $column." LIKE ?";
+                        $binds[] = "%".$search."%";
+                    }
+                    $result->where("(".implode(" OR ",$likes).")", $binds);
                 }
-                $result->where("(".implode(" OR ",$likes).")", $binds);
             }
         }
 
         $records_total_filtered = $result->count();
 
         return [
-            'draw'=> request_int('draw'),
+            'draw'=> request_int('draw', 0),
             'recordsTotal'=> $records_total,
             'recordsFiltered'=> $records_total_filtered,
             'data'=> $data

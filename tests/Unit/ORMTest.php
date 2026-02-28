@@ -70,22 +70,22 @@ class ORMTest extends TestCase
         $this->orm->insert(['name' => 'Jane', 'email' => 'jane@example.com']);
 
         // Select
-        $res = $this->orm->select('name')->where('name = ?', ['John'])->first();
+        $res = (new ORM($this->pdo))->db('users')->select('name')->where('name = ?', ['John'])->first();
         $this->assertEquals('John', $res['name']);
         $this->assertArrayNotHasKey('email', $res);
 
         // OrderBy
-        $res = $this->orm->orderBy('name desc')->first();
+        $res = (new ORM($this->pdo))->db('users')->orderBy('name desc')->first();
         $this->assertEquals('John', $res['name']);
 
         // Limit & Offset
-        $res = $this->orm->orderBy('name asc')->limit(1)->offset(1)->all();
+        $res = (new ORM($this->pdo))->db('users')->orderBy('name asc')->limit(1)->offset(1)->all();
         $this->assertCount(1, $res);
         $this->assertEquals('John', $res[0]['name']);
 
         // GroupBy (SQLite specific check)
         $this->orm->insert(['name' => 'John', 'email' => 'john2@example.com']);
-        $res = $this->orm->groupBy('name')->select('name, COUNT(*) as count')->orderBy('name desc')->all();
+        $res = (new ORM($this->pdo))->db('users')->groupBy('name')->select('name, COUNT(*) as count')->orderBy('name desc')->all();
         // John should have 2
         $found = false;
         foreach($res as $r) {
