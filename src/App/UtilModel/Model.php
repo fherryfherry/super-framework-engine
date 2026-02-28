@@ -4,17 +4,38 @@ declare(strict_types=1);
 
 namespace SuperFrameworkEngine\App\UtilModel;
 
+use ArrayAccess;
 use Exception;
 use ReflectionClass;
 use ReflectionException;
 use ReflectionProperty;
 use SuperFrameworkEngine\App\UtilORM\ORM;
 
-abstract class Model
+abstract class Model implements ArrayAccess
 {
     protected ?string $table = null;
     protected string $primaryKey = "id";
     protected array $attributes = [];
+
+    public function offsetExists($offset): bool
+    {
+        return isset($this->{$offset});
+    }
+
+    public function offsetGet($offset): mixed
+    {
+        return $this->{$offset} ?? null;
+    }
+
+    public function offsetSet($offset, $value): void
+    {
+        $this->{$offset} = $value;
+    }
+
+    public function offsetUnset($offset): void
+    {
+        unset($this->{$offset});
+    }
 
     public function __construct(?array $row = null)
     {
