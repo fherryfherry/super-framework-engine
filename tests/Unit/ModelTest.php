@@ -87,6 +87,12 @@ class ModelTest extends TestCase
         $_REQUEST['page'] = 3;
         $result = User::paginate(10);
         $this->assertCount(5, $result['data']);
+
+        // Test findAllByPaginate
+        $_REQUEST['page'] = 1;
+        $result = User::findAllByPaginate(10);
+        $this->assertCount(10, $result['data']);
+        $this->assertEquals(25, $result['total']);
     }
 
     public function testFindBy(): void

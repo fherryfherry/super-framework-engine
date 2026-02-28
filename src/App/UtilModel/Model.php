@@ -154,6 +154,17 @@ abstract class Model implements ArrayAccess
         return $instance;
     }
 
+    public static function findAllBy(string $column, mixed $value, ?int $limit = null, int $offset = 0): array
+    {
+        $query = db(static::tableName())->where($column . " = ?", [$value]);
+        if (static::isSoftDelete()) {
+            $query->whereNull("deleted_at");
+        }
+
+        $results = $query->all($limit, $offset);
+        return array_map(fn($row) => new static($row), $results);
+    }
+
     public static function all(?int $limit = null, int $offset = 0): array
     {
         $query = db(static::tableName());
@@ -163,6 +174,11 @@ abstract class Model implements ArrayAccess
 
         $results = $query->all($limit, $offset);
         return array_map(fn($row) => new static($row), $results);
+    }
+
+    public static function findAll(?int $limit = null, int $offset = 0): array
+    {
+        return static::all($limit, $offset);
     }
 
     public static function paginate(int $limit = 10, string $orderBy = "id", string $orderDir = "desc"): array
@@ -175,6 +191,11 @@ abstract class Model implements ArrayAccess
         $data = $query->orderBy($orderBy . " " . $orderDir)->paginate($limit);
         $data['data'] = array_map(fn($row) => new static($row), $data['data']);
         return $data;
+    }
+
+    public static function findAllByPaginate(int $limit = 10, string $orderBy = "id", string $orderDir = "desc"): array
+    {
+        return static::paginate($limit, $orderBy, $orderDir);
     }
 
     public function save(): self

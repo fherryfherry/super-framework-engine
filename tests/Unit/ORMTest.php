@@ -152,6 +152,17 @@ class ORMTest extends TestCase
 
         $res = (new ORM($this->pdo))->db('users')->whereNotIn('email', ['date@example.com'])->first();
         $this->assertEquals('null@example.com', $res['email']);
+
+        // Test whereIsset
+        $this->orm->insert(['name' => 'John', 'email' => 'john@example.com']);
+        $res = (new ORM($this->pdo))->db('users')->whereIsset('name', 'John')->first();
+        $this->assertEquals('John', $res['name']);
+        
+        $res = (new ORM($this->pdo))->db('users')->whereIsset('name', null)->where('email = ?', ['john@example.com'])->first();
+        $this->assertEquals('John', $res['name']);
+
+        $res = (new ORM($this->pdo))->db('users')->whereIsset('name', '')->where('email = ?', ['john@example.com'])->first();
+        $this->assertEquals('John', $res['name']);
     }
 
     public function testJoins(): void

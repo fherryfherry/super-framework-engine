@@ -265,6 +265,14 @@ class ORM
         return $this->where($field . " LIKE ?", ["%$keyword%"]);
     }
 
+    public function whereIsset(string $field, mixed $value): self
+    {
+        if ($value !== null && $value !== "") {
+            return $this->where($field . " = ?", [$value]);
+        }
+        return $this;
+    }
+
     public function orderBy(string $orderBy): self
     {
         $this->order_by = $orderBy;
