@@ -110,6 +110,16 @@ class ModelTest extends TestCase
         $notFound = User::findBy('email', 'notfound@example.com');
         $this->assertNull($notFound);
     }
+
+    public function testLoadArray(): void
+    {
+        $data = ['name' => 'Array User', 'email' => 'array@example.com'];
+        $user = User::loadArray($data);
+        
+        $this->assertInstanceOf(User::class, $user);
+        $this->assertEquals('Array User', $user->name);
+        $this->assertEquals('array@example.com', $user->email);
+    }
 }
 
 class User extends Model

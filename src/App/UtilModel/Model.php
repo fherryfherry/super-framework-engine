@@ -154,6 +154,11 @@ abstract class Model implements ArrayAccess
         return $instance;
     }
 
+    public static function loadArray(array $row): static
+    {
+        return new static($row);
+    }
+
     public static function findAllBy(string $column, mixed $value, ?int $limit = null, int $offset = 0): array
     {
         $query = db(static::tableName())->where($column . " = ?", [$value]);
