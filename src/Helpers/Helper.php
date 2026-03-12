@@ -241,7 +241,25 @@ if (!function_exists("base_url")) {
      */
     function base_url(?string $path = null, ?string $default = null): string
     {
-        $base_url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https://' : 'http://';
+        $scheme = 'http';
+        if (isset($_SERVER['HTTP_X_FORWARDED_PROTO'])) {
+            $proto = explode(',', (string) $_SERVER['HTTP_X_FORWARDED_PROTO'])[0];
+            $scheme = strtolower(trim((string) $proto)) === 'https' ? 'https' : 'http';
+        } elseif (isset($_SERVER['HTTP_X_FORWARDED_SSL']) && strtolower((string) $_SERVER['HTTP_X_FORWARDED_SSL']) === 'on') {
+            $scheme = 'https';
+        } elseif (isset($_SERVER['HTTP_X_FORWARDED_SCHEME'])) {
+            $scheme = strtolower((string) $_SERVER['HTTP_X_FORWARDED_SCHEME']) === 'https' ? 'https' : 'http';
+        } elseif (isset($_SERVER['HTTP_FORWARDED'])) {
+            $fwd = strtolower((string) $_SERVER['HTTP_FORWARDED']);
+            if (preg_match('/proto=(https|http)/', $fwd, $m)) {
+                $scheme = $m[1] === 'https' ? 'https' : 'http';
+            } elseif (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') {
+                $scheme = 'https';
+            }
+        } elseif (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') {
+            $scheme = 'https';
+        }
+        $base_url = $scheme . '://';
 
         $tmpURL = BASE_DIR;
         $tmpURL = str_replace(chr(92), '/', $tmpURL);
