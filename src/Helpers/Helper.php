@@ -242,35 +242,40 @@ if (!function_exists("base_url")) {
     function base_url(?string $path = null, ?string $default = null): string
     {
         $scheme = 'http';
-        $cfVisitor = $_SERVER['HTTP_CF_VISITOR'] ?? null;
-        if ($cfVisitor) {
-            $json = json_decode((string) $cfVisitor, true);
-            if (($json['scheme'] ?? '') === 'https') {
-                $scheme = 'https';
-            }
-        } elseif (isset($_SERVER['HTTP_X_FORWARDED_PROTO'])) {
-            $proto = explode(',', (string) $_SERVER['HTTP_X_FORWARDED_PROTO'])[0];
-            $proto = strtolower(trim((string) $proto));
-            $scheme = $proto === 'https' ? 'https' : 'http';
-        } elseif (isset($_SERVER['HTTP_X_FORWARDED_SSL']) && strtolower((string) $_SERVER['HTTP_X_FORWARDED_SSL']) === 'on') {
+        $force = getenv('FORCE_HTTPS_ON') ?? ($_ENV['FORCE_HTTPS_ON'] ?? ($_SERVER['FORCE_HTTPS_ON'] ?? null));
+        if ($force === '1' || $force === 1 || strtolower((string) $force) === 'true') {
             $scheme = 'https';
-        } elseif (isset($_SERVER['HTTP_X_FORWARDED_SCHEME'])) {
-            $scheme = strtolower((string) $_SERVER['HTTP_X_FORWARDED_SCHEME']) === 'https' ? 'https' : 'http';
-        } elseif (isset($_SERVER['HTTP_FORWARDED'])) {
-            $fwd = strtolower((string) $_SERVER['HTTP_FORWARDED']);
-            if (preg_match('/proto=(https|http)/', $fwd, $m)) {
-                $scheme = $m[1] === 'https' ? 'https' : 'http';
-            } else {
-                if (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') {
+        } else {
+            $cfVisitor = $_SERVER['HTTP_CF_VISITOR'] ?? null;
+            if ($cfVisitor) {
+                $json = json_decode((string) $cfVisitor, true);
+                if (($json['scheme'] ?? '') === 'https') {
                     $scheme = 'https';
                 }
+            } elseif (isset($_SERVER['HTTP_X_FORWARDED_PROTO'])) {
+                $proto = explode(',', (string) $_SERVER['HTTP_X_FORWARDED_PROTO'])[0];
+                $proto = strtolower(trim((string) $proto));
+                $scheme = $proto === 'https' ? 'https' : 'http';
+            } elseif (isset($_SERVER['HTTP_X_FORWARDED_SSL']) && strtolower((string) $_SERVER['HTTP_X_FORWARDED_SSL']) === 'on') {
+                $scheme = 'https';
+            } elseif (isset($_SERVER['HTTP_X_FORWARDED_SCHEME'])) {
+                $scheme = strtolower((string) $_SERVER['HTTP_X_FORWARDED_SCHEME']) === 'https' ? 'https' : 'http';
+            } elseif (isset($_SERVER['HTTP_FORWARDED'])) {
+                $fwd = strtolower((string) $_SERVER['HTTP_FORWARDED']);
+                if (preg_match('/proto=(https|http)/', $fwd, $m)) {
+                    $scheme = $m[1] === 'https' ? 'https' : 'http';
+                } else {
+                    if (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') {
+                        $scheme = 'https';
+                    }
+                }
+            } elseif (isset($_SERVER['REQUEST_SCHEME'])) {
+                $scheme = strtolower((string) $_SERVER['REQUEST_SCHEME']) === 'https' ? 'https' : 'http';
+            } elseif ((isset($_SERVER['SERVER_PORT']) && (string) $_SERVER['SERVER_PORT'] === '443') || (isset($_SERVER['HTTP_X_FORWARDED_PORT']) && (string) $_SERVER['HTTP_X_FORWARDED_PORT'] === '443')) {
+                $scheme = 'https';
+            } elseif (isset($_SERVER['HTTPS']) && ($_SERVER['HTTPS'] === 'on' || $_SERVER['HTTPS'] === '1')) {
+                $scheme = 'https';
             }
-        } elseif (isset($_SERVER['REQUEST_SCHEME'])) {
-            $scheme = strtolower((string) $_SERVER['REQUEST_SCHEME']) === 'https' ? 'https' : 'http';
-        } elseif ((isset($_SERVER['SERVER_PORT']) && (string) $_SERVER['SERVER_PORT'] === '443') || (isset($_SERVER['HTTP_X_FORWARDED_PORT']) && (string) $_SERVER['HTTP_X_FORWARDED_PORT'] === '443')) {
-            $scheme = 'https';
-        } elseif (isset($_SERVER['HTTPS']) && ($_SERVER['HTTPS'] === 'on' || $_SERVER['HTTPS'] === '1')) {
-            $scheme = 'https';
         }
         $base_url = $scheme . '://';
 
