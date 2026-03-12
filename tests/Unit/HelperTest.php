@@ -159,13 +159,21 @@ class HelperTest extends TestCase
         $_SERVER['HTTP_HOST'] = 'localhost';
         $_SERVER['REQUEST_URI'] = '/test-page?a=1&b=2';
         $_GET = ['a' => 1, 'b' => 2];
+        unset($_SERVER['HTTP_X_FORWARDED_PROTO']);
 
         // Positive case
         $this->assertEquals('https://localhost/test-page?a=1&b=2', get_current_url());
         $this->assertEquals('https://localhost/test-page', get_current_url([], false));
         $this->assertEquals('https://localhost/test-page?a=1&b=2&c=3', get_current_url(['c' => 3]));
 
+        // Proxy: X-Forwarded-Proto
+        $_SERVER['HTTPS'] = 'off';
+        $_SERVER['HTTP_X_FORWARDED_PROTO'] = 'https';
+        $this->assertEquals('https://localhost/test-page?a=1&b=2', get_current_url());
+        unset($_SERVER['HTTP_X_FORWARDED_PROTO']);
+
         // Negative case: null param (handled as empty array)
+        $_SERVER['HTTPS'] = 'on';
         $this->assertEquals('https://localhost/test-page?a=1&b=2', get_current_url(null));
     }
 

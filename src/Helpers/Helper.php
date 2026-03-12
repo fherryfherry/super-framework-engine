@@ -233,13 +233,11 @@ if (!function_exists('base_path_uri')) {
     }
 }
 
-if (!function_exists("base_url")) {
+if (!function_exists("get_url_scheme")) {
     /**
-     * @param string|null $path
-     * @param string|null $default
      * @return string
      */
-    function base_url(?string $path = null, ?string $default = null): string
+    function get_url_scheme(): string
     {
         $scheme = 'http';
         $force = getenv('FORCE_HTTPS_ON') ?? ($_ENV['FORCE_HTTPS_ON'] ?? ($_SERVER['FORCE_HTTPS_ON'] ?? null));
@@ -277,7 +275,19 @@ if (!function_exists("base_url")) {
                 $scheme = 'https';
             }
         }
-        $base_url = $scheme . '://';
+        return $scheme;
+    }
+}
+
+if (!function_exists("base_url")) {
+    /**
+     * @param string|null $path
+     * @param string|null $default
+     * @return string
+     */
+    function base_url(?string $path = null, ?string $default = null): string
+    {
+        $base_url = get_url_scheme() . '://';
 
         $tmpURL = BASE_DIR;
         $tmpURL = str_replace(chr(92), '/', $tmpURL);
@@ -320,7 +330,7 @@ if (!function_exists("get_current_url")) {
     function get_current_url(?array $param = [], bool $with_query = true): string
     {
         $param = $param ?? [];
-        $url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
+        $url = get_url_scheme() . "://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
         $url = (string) strtok($url, "?");
 
         if ($with_query) {
